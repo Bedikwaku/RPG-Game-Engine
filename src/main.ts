@@ -1,5 +1,6 @@
 import { loadMap, saveMap } from "./data/mapLoader";
 import { createEmptyMap3D } from "./core/Map3D";
+import { renderDrawer } from "./ui/drawer";
 
 // Canvas setup
 const canvas = document.getElementById("glCanvas") as HTMLCanvasElement;
@@ -55,6 +56,9 @@ function drawMap() {
   // Clear the canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  ctx.fillStyle = "#2b2b2b"; // dark gray
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
   // Iterate over the map and draw each tile
   for (let z = 0; z < map.length; z++) {
     for (let y = 0; y < map[z].length; y++) {
@@ -105,3 +109,4 @@ canvas.addEventListener("click", (event) => {
 
 // Initialize the map
 initializeMap();
+renderDrawer();
