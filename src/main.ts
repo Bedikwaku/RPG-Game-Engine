@@ -1,24 +1,24 @@
-import './style.css'
-import typescriptLogo from './typescript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.ts'
+import { createEmptyMap3D } from "./core/Map3D";
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
-  </div>
-`
+const canvas = document.getElementById("glCanvas") as HTMLCanvasElement;
+const gl = canvas.getContext("webgl");
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+if (!gl) {
+  throw new Error("WebGL not supported");
+}
+
+// Simple clear
+gl.clearColor(0.2, 0.3, 0.3, 1.0);
+gl.clear(gl.COLOR_BUFFER_BIT);
+
+const map = createEmptyMap3D(100, 100, 3, "grass");
+console.log(map[0][0][0]);
+
+/* File: test/main.test.ts */
+import { describe, it, expect } from "vitest";
+
+describe("Sample Test", () => {
+  it("should pass", () => {
+    expect(1 + 1).toBe(2);
+  });
+});
