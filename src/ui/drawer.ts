@@ -1,11 +1,9 @@
-// src/ui/drawer.ts
-
-// Constants
-const TILE_SIZE = 32;
+import { TILE_SIZE, loadTileset } from "../objects/map/tileset";
+import { selectedTile } from "../main"; // or wherever it’s declared
 
 // Global State
 let selectedTilesetId = 1;
-let selectedTileIndex = 0;
+let selectedTileIndex: [number, number] = [0, 0];
 
 /**
  * Discover available tilesets (stubbed for now)
@@ -62,98 +60,84 @@ async function displayTileset(tilesetId: number): Promise<void> {
   const grid = document.getElementById("tileset-grid");
   if (!grid) return;
 
-  console.log(`[TilesetLoader] Loading tileset: ${tilesetId}`);
-  grid.innerHTML = "";
+  const tileset = await loadTileset(tilesetId);
 
-  const img = new Image();
-  img.src = `/assets/tilesets/${tilesetId}.bmp`;
-
-  await new Promise<void>((resolve) => {
-    img.onload = () => {
-      console.log(
-        `[TilesetLoader] Tileset ${tilesetId} loaded: ${img.width}x${img.height}`
-      );
-      resolve();
-    };
-    img.onerror = (err) => {
-      console.error(
-        `[TilesetLoader] Failed to load tileset ${tilesetId}.bmp`,
-        err
-      );
-      resolve();
-    };
-  });
-
-  const tilesPerRow = Math.floor(img.width / TILE_SIZE);
-  const tilesPerCol = Math.floor(img.height / TILE_SIZE);
-  const totalTiles = tilesPerRow * tilesPerCol;
+  // const tilesPerRow = Math.floor(tileset.image.width / TILE_SIZE);
+  // const tilesPerCol = Math.floor(img.height / TILE_SIZE);
 
   grid.style.display = "grid";
-  grid.style.gridTemplateColumns = `repeat(${tilesPerRow}, ${TILE_SIZE}px)`;
+  grid.style.gridTemplateColumns = `repeat(${tileset.cols}, ${TILE_SIZE}px)`;
   grid.style.overflowY = "auto";
   grid.style.maxHeight = "600px";
   grid.style.justifyItems = "stretch";
 
+  const totalTiles = tileset.rows * tileset.cols;
+  console.log(`Total columns: ${tileset.cols}`);
+  console.log(`Total rows: ${tileset.rows}`);
   console.log(`[TilesetLoader] Displaying ${totalTiles} tiles`);
 
-  const canvasTiles: HTMLCanvasElement[] = [];
+  const canvasTiles: HTMLCanvasElement[][] = [];
 
-  for (let i = 0; i < totalTiles; i++) {
-    const tileCanvas = document.createElement("canvas");
-    tileCanvas.width = TILE_SIZE;
-    tileCanvas.height = TILE_SIZE;
-    // tileCanvas.style.border = "2px solid transparent";
-    tileCanvas.style.cursor = "pointer";
-    tileCanvas.style.margin = "0";
-    tileCanvas.style.padding = "0";
+  for (let i = 0; i < tileset.rows; i++) {
+    canvasTiles.push([]);
+    for (let j = 0; j < tileset.cols; j++) {
+      const tileCanvas = document.createElement("canvas");
+      console.debug(`[TilesetLoader] Creating canvas for tile ${i}, ${j}`);
+      tileCanvas.width = TILE_SIZE;
+      tileCanvas.height = TILE_SIZE;
+      tileCanvas.style.border = "2px solid transparent";
+      tileCanvas.style.cursor = "pointer";
+      tileCanvas.style.margin = "0";
+      tileCanvas.style.padding = "0";
+      tileCanvas.style.border = "0px solid transparent";
 
-    const ctx = tileCanvas.getContext("2d");
-    if (ctx) {
-      const sx = (i % tilesPerRow) * TILE_SIZE;
-      const sy = Math.floor(i / tilesPerRow) * TILE_SIZE;
-      ctx.drawImage(
-        img,
-        sx,
-        sy,
-        TILE_SIZE,
-        TILE_SIZE,
-        0,
-        0,
-        TILE_SIZE,
-        TILE_SIZE
-      );
+      const ctx = tileCanvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(tileset.tileImage[i][j], 0, 0);
+      }
+
+      tileCanvas.addEventListener("click", () => {
+        console.log(`[TilesetLoader] Tile (${i},${j}) selected`);
+        selectedTileIndex = [i, j];
+        selectedTile.tilesetId = tilesetId;
+        selectedTile.tileIndex = [i, j];
+        highlightTile(canvasTiles, selectedTileIndex);
+      });
+
+      canvasTiles[i].push(tileCanvas);
+      grid.appendChild(tileCanvas);
     }
-
-    tileCanvas.addEventListener("click", () => {
-      console.log(`[TilesetLoader] Tile ${i} selected`);
-      selectedTileIndex = i;
-      highlightTile(canvasTiles, i);
-    });
-
-    canvasTiles.push(tileCanvas);
-    grid.appendChild(tileCanvas);
   }
 
-  highlightTile(canvasTiles, selectedTileIndex);
+  // highlightTile(canvasTiles, selectedTileIndex);
 }
 
 /**
  * Highlight the selected tile visually
  */
 function highlightTile(
-  tiles: HTMLCanvasElement[],
-  selectedIndex: number
+  tiles: HTMLCanvasElement[][],
+  selectedIndex: [number, number]
 ): void {
-  tiles.forEach((tile, index) => {
-    tile.style.border =
-      index === selectedIndex ? "2px solid yellow" : "0px solid transparent";
-  });
+  // To do: Make this more efficient by only updating the selected tile and removing previous highlights
+  // tiles[selectedIndex[0]][selectedIndex[1]].style.border = "2px solid yellow";
+  for (let y = 0; y < tiles.length; y++) {
+    for (let x = 0; x < tiles[y].length; x++) {
+      tiles[y][x].style.border =
+        y === selectedIndex[0] && x === selectedIndex[1]
+          ? "2px solid yellow"
+          : "0px solid transparent";
+    }
+  }
 }
 
 /**
  * Accessor used by other modules to retrieve the currently selected tile
  */
-export function getSelectedTile(): { tilesetId: number; tileIndex: number } {
+export function getSelectedTile(): {
+  tilesetId: number;
+  tileIndex: [number, number];
+} {
   return {
     tilesetId: selectedTilesetId,
     tileIndex: selectedTileIndex,
