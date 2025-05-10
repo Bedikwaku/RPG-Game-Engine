@@ -7,4 +7,7 @@ export default defineConfig({
     environment: "jsdom",
     exclude: [...configDefaults.exclude, "dist/**"],
   },
+  esbuild: {
+    target: "esnext",
+  },
 });

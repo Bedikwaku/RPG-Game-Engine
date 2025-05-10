@@ -1,6 +1,6 @@
 import { TileObject } from "../objects/map/tile";
 import { loadTileset, TILE_SIZE } from "../objects/map/tileset";
-import { selectedTile } from "../state/selectedTile";
+import { selectedTile, selectedZ } from "../state/selectedTile";
 
 // Type to represent map data
 export type MapData = {
@@ -129,19 +129,16 @@ function setupClickHandler(
   ctx: CanvasRenderingContext2D,
   mapData: MapData
 ): void {
+  // Left-click to place tile
   canvas.addEventListener("click", (event: MouseEvent) => {
     const rect = canvas.getBoundingClientRect();
 
-    // Get mouse position relative to canvas
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
 
-    // Convert to tile coordinates
     const tileX = Math.floor(mouseX / TILE_SIZE);
     const tileY = Math.floor(mouseY / TILE_SIZE);
-    const tileZ = 0;
-
-    console.log(`Clicked tile at (${tileX}, ${tileY}, ${tileZ})`);
+    const tileZ = selectedZ;
 
     if (
       tileZ < 0 ||
@@ -155,31 +152,62 @@ function setupClickHandler(
       return;
     }
 
-    mapData.tiles[tileZ][tileY][tileX] = selectedTile;
-    drawTile(ctx, selectedTile, tileX, tileY);
+    // Place the selected tile
+    mapData.tiles[tileZ][tileY][tileX] = {
+      tilesetId: selectedTile.tilesetId,
+      tileIndex: [...selectedTile.tileIndex],
+    };
+
+    drawTile(ctx, mapData.tiles[tileZ][tileY][tileX]!, tileX, tileY);
+  });
+
+  // Right-click to erase tile
+  canvas.addEventListener("contextmenu", (event: MouseEvent) => {
+    event.preventDefault(); // prevent browser context menu
+
+    const rect = canvas.getBoundingClientRect();
+
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+
+    const tileX = Math.floor(mouseX / TILE_SIZE);
+    const tileY = Math.floor(mouseY / TILE_SIZE);
+    const tileZ = selectedZ;
+
+    if (
+      tileZ < 0 ||
+      tileZ >= mapData.depth ||
+      tileY < 0 ||
+      tileY >= mapData.height ||
+      tileX < 0 ||
+      tileX >= mapData.width
+    ) {
+      console.warn("Right-click out of bounds");
+      return;
+    }
+
+    // Erase tile
+    mapData.tiles[tileZ][tileY][tileX] = null;
+
+    // Optionally draw a black square
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(tileX * TILE_SIZE, tileY * TILE_SIZE, TILE_SIZE, TILE_SIZE);
   });
 }
 
-export function generateTiles(
-  width: number,
-  height: number,
-  depth: number
-): TileObject[][][] {
-  // generate null 3d array
-  const tiles: TileObject[][][] = Array.from({ length: depth }, () =>
+// Generate a default 30x30x3 map
+function createDefaultMap(): MapData {
+  console.log("Generating default map...");
+  const width = 30;
+  const height = 30;
+  const depth = 3;
+  const defaultTiles = Array.from({ length: depth }, () =>
     Array.from({ length: height }, () => Array(width).fill(null))
   );
-  tiles[0][0][0] = {
+  defaultTiles[0][0][0] = {
     tilesetId: 1,
     tileIndex: [0, 0],
   }; // Set the first tile as a placeholder
-  return tiles;
-}
-
-// Generate a default 30x30x3 map
-export function createDefaultMap(): MapData {
-  console.log("Generating default map...");
-  const defaultTiles = generateTiles(30, 30, 3);
   return {
     width: 30,
     height: 30,
@@ -189,7 +217,7 @@ export function createDefaultMap(): MapData {
 }
 
 // Save the map to localStorage (mock server)
-export function saveMap(mapId: string, mapData: MapData): void {
+function saveMap(mapId: string, mapData: MapData): void {
   try {
     const mapJson = JSON.stringify(mapData);
     localStorage.setItem(`map_${mapId}`, mapJson);

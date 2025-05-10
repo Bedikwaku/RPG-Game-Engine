@@ -14,7 +14,7 @@ if (!ctx) {
 }
 
 // Initialize the map
-await renderDrawer();
+renderDrawer();
 initializeMap({
   canvas: canvas,
   ctx: ctx,
