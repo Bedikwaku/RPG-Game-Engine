@@ -12,22 +12,4 @@ type MapObject = {
   tiles: (TileObject | null)[][][]; // 3D array of TileProps
 };
 
-function createDefaultMap(): MapObject {
-  console.log("Generating default map...");
-  const width = 5;
-  const height = 5;
-  const depth = 3;
-  const defaultMap: (TileObject | null)[][][] = Array.from(
-    { length: depth },
-    () => Array.from({ length: height }, () => Array(width).fill(null))
-  );
-  console.log(defaultMap);
-  return {
-    width: width,
-    height: height,
-    depth: depth,
-    tiles: defaultMap,
-  };
-}
-
-export { MapObject, createDefaultMap };
+export { MapObject };

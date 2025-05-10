@@ -1,5 +1,5 @@
+import { selectedTile } from "../state/selectedTile";
 import { TILE_SIZE, loadTileset } from "../objects/map/tileset";
-import { selectedTile } from "../main"; // or wherever it’s declared
 
 // Global State
 let selectedTilesetId = 1;
