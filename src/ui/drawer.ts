@@ -1,15 +1,15 @@
 import {
   resetSelectedTileArea,
   selectedTile,
-  selectedTileArea,
   setSelectedTileArea,
 } from "../state/selectedTile";
-import { TILE_SIZE, loadTileset } from "../objects/map/tileset";
+import { TILE_SIZE, loadTileset } from "@/objects/map/tileset";
+import { dragSelectionManager } from "@/state/dragSelectionManager";
+import { highlightTile } from "@/utils/highlightTile";
 
 // Global State
 let selectedTilesetId = 1;
 let selectedTileIndex: [number, number] = [0, 0];
-// let selectedTileArea: [number, number, number, number] | null = null;
 
 /**
  * Discover available tilesets (stubbed for now)
@@ -19,6 +19,18 @@ async function discoverTilesets(): Promise<number[]> {
   const tilesetIds = [1, 2, 3];
   console.log(`[TilesetLoader] Discovered tilesets: ${tilesetIds.join(", ")}`);
   return tilesetIds;
+}
+
+const attachedListeners = {
+  tilesheetSelect: false,
+  tileCanvasEvents: false,
+};
+
+if (!attachedListeners.tileCanvasEvents) {
+  document.addEventListener("mouseup", () => {
+    dragSelectionManager.stop();
+  });
+  attachedListeners.tileCanvasEvents = true;
 }
 
 /**
@@ -50,10 +62,13 @@ export async function renderDrawer(): Promise<void> {
   });
 
   select.value = selectedTilesetId.toString();
-  select.addEventListener("change", () => {
-    selectedTilesetId = parseInt(select.value, 10);
-    displayTileset(selectedTilesetId);
-  });
+  if (!attachedListeners.tilesheetSelect) {
+    select.addEventListener("change", () => {
+      selectedTilesetId = parseInt(select.value, 10);
+      displayTileset(selectedTilesetId);
+    });
+    attachedListeners.tilesheetSelect = true;
+  }
 
   // Load initial tileset
   await displayTileset(selectedTilesetId);
@@ -101,29 +116,21 @@ async function displayTileset(tilesetId: number): Promise<void> {
         ctx.drawImage(tileset.tileImage[i][j], 0, 0);
       }
 
-      tileCanvas.addEventListener("mousedown", (e) => {
-        isDragging = true;
-        dragStart = [i, j];
+      tileCanvas.addEventListener("mousedown", () => {
+        dragSelectionManager.start(i, j);
         resetSelectedTileArea();
       });
 
       tileCanvas.addEventListener("mouseenter", () => {
-        if (isDragging && dragStart) {
-          const [startRow, startCol] = dragStart;
-          const endRow = i;
-          const endCol = j;
-          setSelectedTileArea([
-            Math.min(startRow, endRow),
-            Math.min(startCol, endCol),
-            Math.max(startRow, endRow),
-            Math.max(startCol, endCol),
-          ]);
-          highlightTile(canvasTiles, selectedTileArea);
+        const area = dragSelectionManager.update(i, j);
+        if (area) {
+          setSelectedTileArea(area);
+          highlightTile(canvasTiles, area);
         }
       });
 
       tileCanvas.addEventListener("click", () => {
-        if (!isDragging) {
+        if (!dragSelectionManager["isDragging"]) {
           selectedTileIndex = [i, j];
           selectedTile.tilesetId = tilesetId;
           selectedTile.tileIndex = [i, j];
@@ -137,40 +144,7 @@ async function displayTileset(tilesetId: number): Promise<void> {
     }
   }
 
-  document.addEventListener("mouseup", () => {
-    if (isDragging) {
-      isDragging = false;
-      dragStart = null;
-    }
-  });
-
   highlightTile(canvasTiles, selectedTileIndex);
-}
-
-/**
- * Highlight the selected tile visually
- */
-function highlightTile(
-  canvasTiles: HTMLCanvasElement[][],
-  selection: [number, number] | [number, number, number, number]
-) {
-  for (let i = 0; i < canvasTiles.length; i++) {
-    for (let j = 0; j < canvasTiles[i].length; j++) {
-      canvasTiles[i][j].style.border = "0px solid transparent";
-    }
-  }
-
-  if (selection.length === 2) {
-    const [i, j] = selection;
-    canvasTiles[i][j].style.border = "2px solid yellow";
-  } else {
-    const [startRow, startCol, endRow, endCol] = selection;
-    for (let i = startRow; i <= endRow; i++) {
-      for (let j = startCol; j <= endCol; j++) {
-        canvasTiles[i][j].style.border = "2px solid yellow";
-      }
-    }
-  }
 }
 
 /**

@@ -10,8 +10,7 @@
     "outDir": "dist",
     "baseUrl": "./src",
     "paths": {
-      "@types/*": ["types/*"],
-      "@shared/*": ["types/*"]
+      "@/*": ["*"]
     }
   },
   "include": ["src", "test"]

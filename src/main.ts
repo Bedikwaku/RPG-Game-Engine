@@ -9,10 +9,6 @@ if (!ctx) {
   throw new Error("Canvas context is not available.");
 }
 
-if (!ctx) {
-  console.error("Canvas context is not available.");
-}
-
 // Initialize the map
 renderDrawer();
 initializeMap({

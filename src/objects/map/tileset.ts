@@ -12,7 +12,7 @@ export type TilesetObject = {
 export async function loadTileset(tilesetId: number): Promise<TilesetObject> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.src = `/assets/tilesets/${tilesetId}.bmp`;
+    img.src = `/assets/tilesets/${tilesetId}.png`;
 
     img.onload = () => {
       const cols = Math.floor(img.width / TILE_SIZE);

@@ -1,4 +1,4 @@
-import { TileObject } from "../objects/map/tile";
+import { Tile } from "../objects/map/tile";
 import { loadTileset, TILE_SIZE, TilesetObject } from "../objects/map/tileset";
 import {
   selectedTile,
@@ -11,7 +11,7 @@ export type MapData = {
   width: number;
   height: number;
   depth: number;
-  tiles: (TileObject | null)[][][]; // 3D array of TileProps
+  tiles: (Tile | null)[][][]; // 3D array of TileProps
 };
 
 type InitMapParams = {
@@ -124,7 +124,7 @@ async function loadAndCacheTileset(tilesetId: number): Promise<TilesetObject> {
 
 async function drawTile(
   ctx: CanvasRenderingContext2D,
-  tile: TileObject,
+  tile: Tile,
   x: number,
   y: number
 ): Promise<void> {
@@ -145,7 +145,7 @@ async function drawTile(
 
 async function batchDrawTiles(
   ctx: CanvasRenderingContext2D,
-  updates: { tile: TileObject | null; x: number; y: number }[]
+  updates: { tile: Tile | null; x: number; y: number }[]
 ): Promise<void> {
   const tilesetCache = new Map<number, TilesetObject>();
 
@@ -265,7 +265,7 @@ function setupClickHandler(
       const maxX = Math.max(startTile.x, currentTile.x);
       const maxY = Math.max(startTile.y, currentTile.y);
 
-      const updates: { tile: TileObject | null; x: number; y: number }[] = [];
+      const updates: { tile: Tile | null; x: number; y: number }[] = [];
 
       for (let y = minY; y <= maxY; y++) {
         for (let x = minX; x <= maxX; x++) {
@@ -281,7 +281,7 @@ function setupClickHandler(
               mapData.tiles[z][y][x] = null;
               updates.push({ tile: null, x, y });
             } else {
-              const newTile: TileObject = {
+              const newTile: Tile = {
                 tilesetId: selectedTile.tilesetId,
                 tileIndex: [...selectedTile.tileIndex],
               };
