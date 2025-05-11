@@ -1,4 +1,4 @@
-export const TILE_SIZE = 32; // Size of each tile in pixels
+import { TILE_SIZE } from "@/constants";
 
 export type TilesetObject = {
   tilesetId: number; // ID of the tileset

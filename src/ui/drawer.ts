@@ -1,10 +1,12 @@
+import { TILE_SIZE } from "@/constants";
 import {
   resetSelectedTileArea,
   selectedTile,
   setSelectedTileArea,
 } from "../state/selectedTile";
-import { TILE_SIZE, loadTileset } from "@/objects/map/tileset";
+import { loadTileset } from "@/objects/map/tileset";
 import { dragSelectionManager } from "@/state/dragSelectionManager";
+import { setCurrentLayer, toggleShowAllLayers } from "@/state/layers";
 import { highlightTile } from "@/utils/highlightTile";
 
 // Global State
@@ -44,15 +46,34 @@ export async function renderDrawer(): Promise<void> {
   }
 
   drawer.innerHTML = `
-    <h2>Tileset</h2>
-    <label for="tileset-select">Choose a tileset:</label>
-    <select id="tileset-select"></select>
-    <div id="tileset-grid" style="display: flex; flex-wrap: wrap; gap: 0px; margin-top: 10px;"></div>
-  `;
+  <h2>Tileset</h2>
+  <label for="tileset-select">Choose a tileset:</label>
+  <select id="tileset-select"></select>
+  <label for="layer-select" style="margin-left: 10px;">Layer:</label>
+  <select id="layer-select"></select>
+  <label><input type="checkbox" id="show-all-layers" checked /> Show all layers</label>
+  <div id="tileset-grid" style="display: flex; flex-wrap: wrap; gap: 0px; margin-top: 10px;"></div>
+`;
 
   const select = document.getElementById("tileset-select") as HTMLSelectElement;
   const tilesetIds = await discoverTilesets();
 
+  // Layer selection dropdown
+  const layerSelect = document.getElementById(
+    "layer-select"
+  ) as HTMLSelectElement;
+  layerSelect.addEventListener("change", () => {
+    const selectedLayerIndex = parseInt(layerSelect.value, 10);
+    setCurrentLayer(selectedLayerIndex); // Updates state and triggers renderTiles() automatically
+  });
+
+  // Show all layers checkbox
+  const showAllLayersCheckbox = document.getElementById(
+    "show-all-layers"
+  ) as HTMLInputElement;
+  showAllLayersCheckbox.addEventListener("change", () => {
+    toggleShowAllLayers(showAllLayersCheckbox.checked); // Updates state and triggers renderTiles() automatically
+  });
   // Populate dropdown
   tilesetIds.forEach((id) => {
     const option = document.createElement("option");

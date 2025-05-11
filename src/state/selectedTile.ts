@@ -1,9 +1,13 @@
 import { Tile } from "@/objects/map/tile";
+import { eventBus } from "./eventBus";
 
 export let selectedTile: Tile = { tilesetId: 1, tileIndex: [0, 0] }; // Default selected tile (1st tile of tileset 1)
-export let selectedZ = 0; // Default Z index
 export let selectedTileIndex: [number, number] = [0, 0];
 export let selectedTileArea: [number, number, number, number] = [0, 0, 0, 0]; // [startRow, startCol, endRow, endCol]
+export let selectedZ = 0; // Default Z index
+
+export let currentLayerIndex = 0;
+export let showAllLayers = true; // Default value for layer visibility
 
 export function resetSelectedTileArea() {
   selectedTileArea = [0, 0, 0, 0];

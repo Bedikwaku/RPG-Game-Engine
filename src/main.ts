@@ -11,10 +11,4 @@ if (!ctx) {
 
 // Initialize the map
 renderDrawer();
-initializeMap({
-  canvas: canvas,
-  ctx: ctx,
-  mapId: "0",
-  viewportWidth: 25,
-  viewportHeight: 25,
-});
+initializeMap(canvas, "0");
