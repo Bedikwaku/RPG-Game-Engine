@@ -1,9 +1,15 @@
-import { selectedTile } from "../state/selectedTile";
+import {
+  resetSelectedTileArea,
+  selectedTile,
+  selectedTileArea,
+  setSelectedTileArea,
+} from "../state/selectedTile";
 import { TILE_SIZE, loadTileset } from "../objects/map/tileset";
 
 // Global State
 let selectedTilesetId = 1;
 let selectedTileIndex: [number, number] = [0, 0];
+// let selectedTileArea: [number, number, number, number] | null = null;
 
 /**
  * Discover available tilesets (stubbed for now)
@@ -57,13 +63,12 @@ export async function renderDrawer(): Promise<void> {
  * Load and display the tiles from the selected tileset
  */
 async function displayTileset(tilesetId: number): Promise<void> {
+  console.log(`Displaying tileset ${tilesetId}`);
   const grid = document.getElementById("tileset-grid");
   if (!grid) return;
+  grid.innerHTML = "";
 
   const tileset = await loadTileset(tilesetId);
-
-  // const tilesPerRow = Math.floor(tileset.image.width / TILE_SIZE);
-  // const tilesPerCol = Math.floor(img.height / TILE_SIZE);
 
   grid.style.display = "grid";
   grid.style.gridTemplateColumns = `repeat(${tileset.cols}, ${TILE_SIZE}px)`;
@@ -77,31 +82,54 @@ async function displayTileset(tilesetId: number): Promise<void> {
   console.log(`[TilesetLoader] Displaying ${totalTiles} tiles`);
 
   const canvasTiles: HTMLCanvasElement[][] = [];
+  let isDragging = false;
+  let dragStart: [number, number] | null = null;
 
   for (let i = 0; i < tileset.rows; i++) {
     canvasTiles.push([]);
     for (let j = 0; j < tileset.cols; j++) {
       const tileCanvas = document.createElement("canvas");
-      console.debug(`[TilesetLoader] Creating canvas for tile ${i}, ${j}`);
       tileCanvas.width = TILE_SIZE;
       tileCanvas.height = TILE_SIZE;
       tileCanvas.style.border = "2px solid transparent";
       tileCanvas.style.cursor = "pointer";
       tileCanvas.style.margin = "0";
       tileCanvas.style.padding = "0";
-      tileCanvas.style.border = "0px solid transparent";
 
       const ctx = tileCanvas.getContext("2d");
       if (ctx) {
         ctx.drawImage(tileset.tileImage[i][j], 0, 0);
       }
 
+      tileCanvas.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        dragStart = [i, j];
+        resetSelectedTileArea();
+      });
+
+      tileCanvas.addEventListener("mouseenter", () => {
+        if (isDragging && dragStart) {
+          const [startRow, startCol] = dragStart;
+          const endRow = i;
+          const endCol = j;
+          setSelectedTileArea([
+            Math.min(startRow, endRow),
+            Math.min(startCol, endCol),
+            Math.max(startRow, endRow),
+            Math.max(startCol, endCol),
+          ]);
+          highlightTile(canvasTiles, selectedTileArea);
+        }
+      });
+
       tileCanvas.addEventListener("click", () => {
-        console.log(`[TilesetLoader] Tile (${i},${j}) selected`);
-        selectedTileIndex = [i, j];
-        selectedTile.tilesetId = tilesetId;
-        selectedTile.tileIndex = [i, j];
-        highlightTile(canvasTiles, selectedTileIndex);
+        if (!isDragging) {
+          selectedTileIndex = [i, j];
+          selectedTile.tilesetId = tilesetId;
+          selectedTile.tileIndex = [i, j];
+          resetSelectedTileArea();
+          highlightTile(canvasTiles, selectedTileIndex);
+        }
       });
 
       canvasTiles[i].push(tileCanvas);
@@ -109,24 +137,38 @@ async function displayTileset(tilesetId: number): Promise<void> {
     }
   }
 
-  // highlightTile(canvasTiles, selectedTileIndex);
+  document.addEventListener("mouseup", () => {
+    if (isDragging) {
+      isDragging = false;
+      dragStart = null;
+    }
+  });
+
+  highlightTile(canvasTiles, selectedTileIndex);
 }
 
 /**
  * Highlight the selected tile visually
  */
 function highlightTile(
-  tiles: HTMLCanvasElement[][],
-  selectedIndex: [number, number]
-): void {
-  // To do: Make this more efficient by only updating the selected tile and removing previous highlights
-  // tiles[selectedIndex[0]][selectedIndex[1]].style.border = "2px solid yellow";
-  for (let y = 0; y < tiles.length; y++) {
-    for (let x = 0; x < tiles[y].length; x++) {
-      tiles[y][x].style.border =
-        y === selectedIndex[0] && x === selectedIndex[1]
-          ? "2px solid yellow"
-          : "0px solid transparent";
+  canvasTiles: HTMLCanvasElement[][],
+  selection: [number, number] | [number, number, number, number]
+) {
+  for (let i = 0; i < canvasTiles.length; i++) {
+    for (let j = 0; j < canvasTiles[i].length; j++) {
+      canvasTiles[i][j].style.border = "0px solid transparent";
+    }
+  }
+
+  if (selection.length === 2) {
+    const [i, j] = selection;
+    canvasTiles[i][j].style.border = "2px solid yellow";
+  } else {
+    const [startRow, startCol, endRow, endCol] = selection;
+    for (let i = startRow; i <= endRow; i++) {
+      for (let j = startCol; j <= endCol; j++) {
+        canvasTiles[i][j].style.border = "2px solid yellow";
+      }
     }
   }
 }

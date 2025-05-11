@@ -15,21 +15,41 @@ This project is a browser-based game built using TypeScript and WebGL. The game 
 ## 📁 Project Structure
 
 ```
-webgl-ts-game/
-├── public/                  # Static assets (e.g., index.html)
-├── src/                     # Application source code
-│   ├── core/                # Core game logic (e.g., map, camera)
-│   │   └── Map3D.ts         # Map creation and handling
-│   ├── types/               # Shared types and interfaces
-│   │   └── index.ts         # Map3D, TileProps, etc.
-│   ├── main.ts              # App entry point and rendering bootstrap
-│   └── renderer/            # WebGL rendering utilities (planned)
-├── test/                    # Unit and integration tests
-│   └── main.test.ts         # Example test
-├── tsconfig.json            # TypeScript config (with path aliases)
-├── vite.config.ts           # Vite and Vitest configuration
-└── package.json             # Project metadata and scripts
+
 ```
+
+## Game Objects
+
+### Map
+
+The map object defines the maps or scenes within the game. Each map is a 3D array of tiles, where each tile can have different properties such as texture, type, and other attributes. The map object also includes methods for loading and saving maps, as well as generating default maps. The map is designed to be flexible and extensible, allowing for easy addition of new features or changes to existing ones.
+The map object is used in conjunction with the tileset object, which defines the available textures and their properties. The map and tileset objects work together to create a rich and immersive game world, allowing for dynamic interactions and events based on the properties of the tiles and the player's actions.
+
+### Tileset
+
+To add documentation
+
+### Tile
+
+To add documentation
+
+## Game Engine Tools
+
+### Map Editor
+
+### Character (NPC) Editor
+
+## AI
+
+### NPC
+
+#### Movement
+
+#### Dialogue
+
+#### Combat
+
+#### Events
 
 ## 🗺️ Map Representation
 
@@ -72,10 +92,9 @@ npm run test
 
 ## 🧭 Next Steps
 
-- Implement `Camera.ts` for tile-based movement with smooth interpolation.
-- Begin `WebGLRenderer.ts` with support for rendering basic tiles.
-- Add input handling for keyboard controls.
-- Expand map logic to support dynamic events and collision detection.
+- Save map on paint
+- Add ability to change Z level for painting
+- Add transparency
 
 ---
 
