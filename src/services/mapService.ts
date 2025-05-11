@@ -91,8 +91,8 @@ async function drawMap(
       for (let x = 0; x < tiles[z][y].length; x++) {
         const tile = tiles[z][y][x];
         if (tile) {
-          console.log(tile);
-          drawTile(ctx, tiles[z][y][x]!, x, y);
+          // console.log(tile);
+          await drawTile(ctx, tiles[z][y][x]!, x, y);
         } else {
           // Draw a placeholder for empty tiles (optional)
           ctx.fillStyle = "#000000"; // black
@@ -107,14 +107,29 @@ async function drawMap(
   }
   console.log("Map drawn successfully.");
 }
+
+const tilesetCache: Record<string, TilesetObject> = {};
+
+async function loadAndCacheTileset(tilesetId: number): Promise<TilesetObject> {
+  if (tilesetCache[tilesetId]) {
+    console.log("Cache hit");
+    return tilesetCache[tilesetId];
+  }
+  console.log("Cache miss");
+
+  const tileset = await loadTileset(tilesetId); // expensive operation
+  tilesetCache[tilesetId] = tileset;
+  return tileset;
+}
+
 async function drawTile(
   ctx: CanvasRenderingContext2D,
   tile: TileObject,
   x: number,
   y: number
 ): Promise<void> {
-  // const tileset = await loadAndCacheTileset(tile.tilesetId);
-  const tileset = await loadTileset(tile.tilesetId);
+  const tileset = await loadAndCacheTileset(tile.tilesetId);
+  // const tileset = await loadTileset(tile.tilesetId);
   const tileImage = tileset.tileImage[tile.tileIndex[0]][tile.tileIndex[1]];
 
   const screenX = x * TILE_SIZE;
@@ -350,7 +365,7 @@ function createDefaultMap(): MapData {
   console.log("Generating default map...");
   const width = 30;
   const height = 30;
-  const depth = 3;
+  const depth = 1;
   const defaultTiles = Array.from({ length: depth }, () =>
     Array.from({ length: height }, () => Array(width).fill(null))
   );
@@ -359,9 +374,9 @@ function createDefaultMap(): MapData {
     tileIndex: [0, 0],
   }; // Set the first tile as a placeholder
   return {
-    width: 30,
-    height: 30,
-    depth: 3,
+    width: width,
+    height: height,
+    depth: depth,
     tiles: defaultTiles,
   };
 }
