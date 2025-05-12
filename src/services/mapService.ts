@@ -319,21 +319,36 @@ async function renderTiles(mapData: MapData) {
     ? mapData.tiles
     : [mapData.tiles[currentLayerIndex]];
 
-  const { x: ox, y: oy } = viewOffset;
   const { width: vw, height: vh } = viewport;
+  const { x: ox, y: oy } = viewOffset.actual;
+
+  const startX = Math.floor(ox);
+  const startY = Math.floor(oy);
+
+  const offsetX = ox - startX;
+  const offsetY = oy - startY;
+
+  const drawOffsetX = -offsetX * TILE_SIZE;
+  const drawOffsetY = -offsetY * TILE_SIZE;
+
+  const tilesToRenderX = vw + 1;
+  const tilesToRenderY = vh + 1;
 
   for (let z = 0; z < layersToRender.length; z++) {
     const layer = layersToRender[z];
-    for (let y = oy; y < oy + vh; y++) {
-      for (let x = ox; x < ox + vw; x++) {
-        if (y >= mapData.height || x >= mapData.width) continue;
+    for (let y = 0; y < tilesToRenderY; y++) {
+      for (let x = 0; x < tilesToRenderX; x++) {
+        const mapX = startX + x;
+        const mapY = startY + y;
 
-        const tile = layer[y][x];
-        const screenX = (x - ox) * TILE_SIZE;
-        const screenY = (y - oy) * TILE_SIZE;
+        if (mapY >= mapData.height || mapX >= mapData.width) continue;
+
+        const tile = layer[mapY]?.[mapX];
+        const screenX = x * TILE_SIZE + drawOffsetX;
+        const screenY = y * TILE_SIZE + drawOffsetY;
 
         if (tile) {
-          await drawTile(ctx, tile, x - ox, y - oy);
+          await drawTile(ctx, tile, screenX / 1, screenY / 1);
         } else {
           ctx.fillStyle = "#2b2b2b";
           ctx.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
@@ -360,20 +375,27 @@ async function loadAndCacheTileset(tilesetId: number): Promise<TilesetObject> {
 async function drawTile(
   ctx: CanvasRenderingContext2D,
   tile: Tile,
-  x: number,
-  y: number
+  screenX: number,
+  screenY: number
 ): Promise<void> {
   const tileset = await loadAndCacheTileset(tile.tilesetId);
   // const tileset = await loadTileset(tile.tilesetId);
   const tileImage = tileset.tileImage[tile.tileIndex[0]][tile.tileIndex[1]];
 
-  const screenX = x * TILE_SIZE;
-  const screenY = y * TILE_SIZE;
-
   if (!tileImage) {
-    console.warn(`Missing tile image for tile at (${x}, ${y})`);
+    console.warn(`Missing tile image for tile at (${screenX}, ${screenY})`);
     return;
   }
 
-  ctx.drawImage(tileImage, x * TILE_SIZE, y * TILE_SIZE);
+  ctx.drawImage(
+    tileImage, // The image of the tile
+    0,
+    0,
+    TILE_SIZE,
+    TILE_SIZE, // Source: drawing the full tile image
+    screenX,
+    screenY,
+    TILE_SIZE,
+    TILE_SIZE // Destination: where to place it on the canvas (fractional positions allowed)
+  );
 }
