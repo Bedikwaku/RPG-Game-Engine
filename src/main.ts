@@ -1,5 +1,6 @@
 import { renderDrawer } from "./ui/drawer";
 import { initializeMap } from "./services/mapService";
+import { initializeDebugUI } from "./ui/debugUI";
 
 // Canvas setup
 const canvas = document.getElementById("glCanvas") as HTMLCanvasElement;
@@ -11,4 +12,5 @@ if (!ctx) {
 
 // Initialize the map
 renderDrawer();
-initializeMap(canvas, "0");
+await initializeMap(canvas, "0");
+initializeDebugUI(canvas.parentElement!);

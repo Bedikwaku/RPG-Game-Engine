@@ -4,6 +4,12 @@ import { Tile } from "@/objects/map/tile";
 import { TILE_SIZE } from "@/constants";
 import { loadTileset, TilesetObject } from "@/objects/map/tileset";
 import { selectedTile, selectedTileArea } from "@/state/selectedTile";
+import {
+  subscribeToViewOffset,
+  viewOffset,
+  viewport,
+} from "@/state/viewportState";
+import { initializePanControls } from "@/input/panControl";
 
 export interface MapData {
   width: number;
@@ -17,33 +23,29 @@ let ctx: CanvasRenderingContext2D;
 let currentLayerIndex = 0;
 let showAllLayers = false;
 
-// Temporary interaction state
-let startTile: { x: number; y: number } | null = null;
-let currentTile: { x: number; y: number } | null = null;
-let isSelecting = false;
-
 export async function initializeMap(
   canvasEl: HTMLCanvasElement,
   mapId: string
-  // layerIndex: number,
-  // showAll: boolean,
 ) {
   canvas = canvasEl;
   ctx = canvas.getContext("2d")!;
-  // currentLayerIndex = layerIndex;
-  showAllLayers = true; // showAll;
+  showAllLayers = true;
 
   const mapData = await loadOrCreateMap(mapId);
   mapState.setMapData(mapData);
   console.log("Map data set successfully:", mapData);
   setupCanvas(canvas, ctx, mapData.width, mapData.height);
-  canvas.width = mapData.width * TILE_SIZE;
-  canvas.height = mapData.height * TILE_SIZE;
+  canvas.width = 15 * TILE_SIZE;
+  canvas.height = 15 * TILE_SIZE;
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "#2b2b2b";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   renderTiles(mapData);
-
+  initializePanControls();
+  subscribeToViewOffset(() => {
+    renderTiles(mapState.getMapData());
+  });
   setupSubscriptions();
   setupClickHandler(canvas, ctx, mapId, mapData);
 }
@@ -317,18 +319,24 @@ async function renderTiles(mapData: MapData) {
     ? mapData.tiles
     : [mapData.tiles[currentLayerIndex]];
 
+  const { x: ox, y: oy } = viewOffset;
+  const { width: vw, height: vh } = viewport;
+
   for (let z = 0; z < layersToRender.length; z++) {
     const layer = layersToRender[z];
-    for (let y = 0; y < mapData.height; y++) {
-      for (let x = 0; x < mapData.width; x++) {
+    for (let y = oy; y < oy + vh; y++) {
+      for (let x = ox; x < ox + vw; x++) {
+        if (y >= mapData.height || x >= mapData.width) continue;
+
         const tile = layer[y][x];
+        const screenX = (x - ox) * TILE_SIZE;
+        const screenY = (y - oy) * TILE_SIZE;
+
         if (tile) {
-          // Draw tile (this will need to be adjusted to render the tile's content)
-          await drawTile(ctx, tile, x, y); // Assuming `drawTile` is a function that draws the tile
+          await drawTile(ctx, tile, x - ox, y - oy);
         } else {
-          // Draw empty tile (optional, can be omitted if not needed)
-          ctx.fillStyle = "#2b2b2b"; // Background color
-          ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          ctx.fillStyle = "#2b2b2b";
+          ctx.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
         }
       }
     }
@@ -367,5 +375,5 @@ async function drawTile(
     return;
   }
 
-  ctx.drawImage(tileImage, screenX, screenY);
+  ctx.drawImage(tileImage, x * TILE_SIZE, y * TILE_SIZE);
 }
