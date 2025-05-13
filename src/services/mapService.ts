@@ -128,9 +128,16 @@ async function batchDrawTiles(
   >();
 
   for (const { tile, x, y } of updates) {
+    const trueTileX = x - viewOffset.x;
+    const trueTileY = y - viewOffset.y;
     if (!tile) {
       ctx.fillStyle = "#000000";
-      ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      ctx.fillRect(
+        trueTileX * TILE_SIZE,
+        trueTileY * TILE_SIZE,
+        TILE_SIZE,
+        TILE_SIZE
+      );
       continue;
     }
 
@@ -142,7 +149,11 @@ async function batchDrawTiles(
 
     const tileImage = tileset.tileImage[tile.tileIndex[0]][tile.tileIndex[1]];
     if (!tileImage) continue;
-    ctx.drawImage(tileImage, x * TILE_SIZE, y * TILE_SIZE);
+    ctx.drawImage(
+      tileImage,
+      (x - viewOffset.x) * TILE_SIZE,
+      (y - viewOffset.y) * TILE_SIZE
+    );
   }
 }
 
@@ -182,6 +193,9 @@ function setupClickHandler(
     const maxX = Math.max(start.x, end.x);
     const maxY = Math.max(start.y, end.y);
 
+    console.log(
+      `Drawing selection rect from (${minX}, ${minY}) to (${maxX}, ${maxY})`
+    );
     overlayCtx.strokeStyle = "rgba(255, 255, 0, 0.8)";
     overlayCtx.lineWidth = 2;
     overlayCtx.strokeRect(
@@ -194,6 +208,10 @@ function setupClickHandler(
 
   canvas.addEventListener("mousedown", (event) => {
     if (event.button !== 0 && event.button !== 2) return;
+
+    console.log(
+      `Mouse down at (${Math.floor(event.clientX / TILE_SIZE)}, ${Math.floor(event.clientY / TILE_SIZE)})`
+    );
 
     const rect = canvas.getBoundingClientRect();
     const tileX = Math.floor((event.clientX - rect.left) / TILE_SIZE);
@@ -218,13 +236,15 @@ function setupClickHandler(
   window.addEventListener("mouseup", async (event) => {
     if (!isSelecting || !startTile || !currentTile) return;
 
+    isSelecting = false;
     const isRightClick = event.button === 2;
     const z = currentLayerIndex;
 
-    const minX = Math.min(startTile.x, currentTile.x);
-    const minY = Math.min(startTile.y, currentTile.y);
-    const maxX = Math.max(startTile.x, currentTile.x);
-    const maxY = Math.max(startTile.y, currentTile.y);
+    const minX = Math.min(startTile.x, currentTile.x) + viewOffset.x;
+    const minY = Math.min(startTile.y, currentTile.y) + viewOffset.y;
+    const maxX = Math.max(startTile.x, currentTile.x) + viewOffset.x;
+    const maxY = Math.max(startTile.y, currentTile.y) + viewOffset.y;
+    console.log(`minX: ${minX}, minY: ${minY}, maxX: ${maxX}, maxY: ${maxY}`);
 
     if (!isRightClick && !selectedTileArea.every((v) => v === 0)) {
       await applyTileStamp(ctx, mapData, z, minX, minY);
@@ -233,7 +253,6 @@ function setupClickHandler(
 
       for (let y = minY; y <= maxY; y++) {
         for (let x = minX; x <= maxX; x++) {
-          console.log("MAPDATA", mapData);
           if (
             x >= 0 &&
             x < mapData.width &&
@@ -252,7 +271,14 @@ function setupClickHandler(
               };
               mapData.tiles[z][y][x] = newTile;
               updates.push({ tile: newTile, x, y });
+              console.log(
+                `Tile updated at (${x}, ${y}) in layer ${z} with tilesetId ${newTile.tilesetId}`
+              );
             }
+          } else {
+            console.warn(
+              `Tile coordinates out of bounds: (${x}, ${y}) in layer ${z}`
+            );
           }
         }
       }
@@ -280,8 +306,6 @@ async function applyTileStamp(
   const [rowStart, colStart, rowEnd, colEnd] = selectedTileArea;
 
   if (!selectedTileArea.every((v) => v === 0)) {
-    const tileset = await loadTileset(selectedTile.tilesetId);
-
     for (let dy = 0; dy <= rowEnd - rowStart; dy++) {
       for (let dx = 0; dx <= colEnd - colStart; dx++) {
         const targetX = startX + dx;
@@ -381,7 +405,7 @@ async function drawTile(
   const tileset = await loadAndCacheTileset(tile.tilesetId);
   // const tileset = await loadTileset(tile.tilesetId);
   const tileImage = tileset.tileImage[tile.tileIndex[0]][tile.tileIndex[1]];
-
+  console.log(`drawing tile at (${screenX}, ${screenY})`);
   if (!tileImage) {
     console.warn(`Missing tile image for tile at (${screenX}, ${screenY})`);
     return;

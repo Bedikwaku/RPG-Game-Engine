@@ -1,30 +1,113 @@
-import { viewOffset } from "@/state/viewportState";
+import { TILE_SIZE } from "@/constants";
+import { MapData } from "@/services/mapService";
+import { mapState } from "@/state/mapState";
+import { viewport, viewOffset } from "@/state/viewportState";
 
+// Pan speed (in pixels per second)
+const PAN_SPEED = 10; // Adjust as needed
+
+let panInterval: number | null = null;
+let lastPanTimestamp = 0; // Track time for smooth panning
+const panDirection = { x: 0, y: 0 }; // Store current pan direction
+
+// We want to keep the pan controls dynamic
 export function initializePanControls() {
   window.addEventListener("keydown", (e) => {
-    let changed = false;
+    if (e.repeat) return; // Prevent repeated keydown events from firing
 
     switch (e.key) {
       case "ArrowUp":
       case "w":
-        viewOffset.y = Math.max(0, viewOffset.y - 1);
-        changed = true;
+        panDirection.y = -1;
         break;
       case "ArrowDown":
       case "s":
-        viewOffset.y += 1;
-        changed = true;
+        panDirection.y = 1;
         break;
       case "ArrowLeft":
       case "a":
-        viewOffset.x = Math.max(0, viewOffset.x - 1);
-        changed = true;
+        panDirection.x = -1;
         break;
       case "ArrowRight":
       case "d":
-        viewOffset.x += 1;
-        changed = true;
+        panDirection.x = 1;
         break;
     }
+
+    // Start the pan interval if it's not already running
+    if (!panInterval) {
+      lastPanTimestamp = performance.now(); // Reset time tracking
+      panInterval = requestAnimationFrame(panStep); // Start the panning loop
+    }
   });
+
+  window.addEventListener("keyup", (e) => {
+    // Stop panning in the corresponding direction when the key is released
+    switch (e.key) {
+      case "ArrowUp":
+      case "w":
+        if (panDirection.y === -1) panDirection.y = 0;
+        break;
+      case "ArrowDown":
+      case "s":
+        if (panDirection.y === 1) panDirection.y = 0;
+        break;
+      case "ArrowLeft":
+      case "a":
+        if (panDirection.x === -1) panDirection.x = 0;
+        break;
+      case "ArrowRight":
+      case "d":
+        if (panDirection.x === 1) panDirection.x = 0;
+        break;
+    }
+
+    // If no direction is active, snap to grid and stop the pan interval
+    if (panDirection.x === 0 && panDirection.y === 0) {
+      if (panInterval) {
+        cancelAnimationFrame(panInterval);
+        panInterval = null;
+      }
+      // Snap to nearest whole tile
+      viewOffset.x = Math.round(viewOffset.x);
+      viewOffset.y = Math.round(viewOffset.y);
+    }
+  });
+}
+
+// This function continuously updates the viewOffset based on time and pan direction
+function panStep(timestamp: number) {
+  const timeElapsed = (timestamp - lastPanTimestamp) / 1000; // Time in seconds
+  const mapData = mapState.getMapData(); // Assuming you have a way to get the current map data
+  lastPanTimestamp = timestamp;
+
+  // Calculate how far we should pan in this frame based on the pan speed and elapsed time
+  const offsetX = panDirection.x * PAN_SPEED * timeElapsed;
+  const offsetY = panDirection.y * PAN_SPEED * timeElapsed;
+
+  // Update the viewOffset
+  viewOffset.x += offsetX;
+  viewOffset.y += offsetY;
+
+  // Ensure the new offset is within map bounds (optional)
+  const maxX = Math.max(
+    0,
+    mapData.width * TILE_SIZE - viewport.width * TILE_SIZE
+  );
+  const maxY = Math.max(
+    0,
+    mapData.height * TILE_SIZE - viewport.height * TILE_SIZE
+  );
+
+  viewOffset.x = Math.max(0, Math.min(viewOffset.x, maxX));
+  viewOffset.y = Math.max(0, Math.min(viewOffset.y, maxY));
+
+  // Continue the panning animation if there's still a direction
+  if (panDirection.x !== 0 || panDirection.y !== 0) {
+    panInterval = requestAnimationFrame(panStep);
+  } else {
+    // Snap to nearest whole tile
+    viewOffset.x = Math.round(viewOffset.x);
+    viewOffset.y = Math.round(viewOffset.y);
+  }
 }
