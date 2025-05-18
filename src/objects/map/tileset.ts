@@ -9,7 +9,17 @@ export type TilesetObject = {
   rows: number; // Number of rows in the tileset
 };
 
-export async function loadTileset(tilesetId: number): Promise<TilesetObject> {
+let discoveredTilesets: number[] = [];
+
+async function discoverTilesets(): Promise<number[]> {
+  // TODO: Replace with dynamic file listing if backend is introduced
+  const tilesetIds = [1, 2, 3];
+  console.log(`[TilesetLoader] Discovered tilesets: ${tilesetIds.join(", ")}`);
+  discoveredTilesets = tilesetIds;
+  return tilesetIds;
+}
+
+async function loadTileset(tilesetId: number): Promise<TilesetObject> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.src = `/assets/tilesets/${tilesetId}.png`;
@@ -56,7 +66,40 @@ export async function loadTileset(tilesetId: number): Promise<TilesetObject> {
     };
 
     img.onerror = () => {
-      reject(new Error(`Failed to load tileset: ${tilesetId}.bmp`));
+      reject(new Error(`Failed to load tileset: ${tilesetId}.png`));
     };
   });
 }
+
+const tilesetCache: Record<string, TilesetObject> = {};
+
+async function loadAndCacheAllTilesets(): Promise<void> {
+  const promises = discoveredTilesets.map(async (tilesetId) => {
+    if (tilesetCache[tilesetId]) {
+      return Promise.resolve(tilesetCache[tilesetId]);
+    } else {
+      try {
+        const tileset = await loadTileset(tilesetId);
+        tilesetCache[tilesetId] = tileset;
+        return tileset;
+      } catch (error) {
+        console.error(`Error loading tileset ${tilesetId}:`, error);
+        // Remove tileID from discoveredTilesets if it fails to load
+        const index = discoveredTilesets.indexOf(tilesetId);
+        if (index > -1) {
+          discoveredTilesets.splice(index, 1);
+        }
+
+        return null;
+      }
+    }
+  });
+  await Promise.all(promises);
+}
+
+export {
+  loadAndCacheAllTilesets,
+  discoverTilesets,
+  tilesetCache,
+  discoveredTilesets,
+};

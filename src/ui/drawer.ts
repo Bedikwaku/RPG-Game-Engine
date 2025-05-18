@@ -4,7 +4,7 @@ import {
   selectedTile,
   setSelectedTileArea,
 } from "../state/selectedTile";
-import { loadTileset } from "@/objects/map/tileset";
+import { discoveredTilesets, tilesetCache } from "@/objects/map/tileset";
 import { dragSelectionManager } from "@/state/dragSelectionManager";
 import { setCurrentLayer, toggleShowAllLayers } from "@/state/layers";
 import { highlightTile } from "@/utils/highlightTile";
@@ -12,16 +12,6 @@ import { highlightTile } from "@/utils/highlightTile";
 // Global State
 let selectedTilesetId = 1;
 let selectedTileIndex: [number, number] = [0, 0];
-
-/**
- * Discover available tilesets (stubbed for now)
- */
-async function discoverTilesets(): Promise<number[]> {
-  // TODO: Replace with dynamic file listing if backend is introduced
-  const tilesetIds = [1, 2, 3];
-  console.log(`[TilesetLoader] Discovered tilesets: ${tilesetIds.join(", ")}`);
-  return tilesetIds;
-}
 
 const attachedListeners = {
   tilesheetSelect: false,
@@ -56,7 +46,7 @@ export async function renderDrawer(): Promise<void> {
 `;
 
   const select = document.getElementById("tileset-select") as HTMLSelectElement;
-  const tilesetIds = await discoverTilesets();
+  const tilesetIds = discoveredTilesets;
 
   // Layer selection dropdown
   const layerSelect = document.getElementById(
@@ -104,7 +94,7 @@ async function displayTileset(tilesetId: number): Promise<void> {
   if (!grid) return;
   grid.innerHTML = "";
 
-  const tileset = await loadTileset(tilesetId);
+  const tileset = tilesetCache[tilesetId];
 
   grid.style.display = "grid";
   grid.style.gridTemplateColumns = `repeat(${tileset.cols}, ${TILE_SIZE}px)`;

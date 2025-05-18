@@ -1,8 +1,8 @@
 import { mapState } from "@/state/mapState";
 import { eventBus } from "@/state/eventBus";
 import { Tile } from "@/objects/map/tile";
-import { TILE_SIZE } from "@/constants";
-import { loadTileset, TilesetObject } from "@/objects/map/tileset";
+import { TILE_SIZE, VIEWPORT_HEIGHT, VIEWPORT_WIDTH } from "@/constants";
+import { tilesetCache } from "@/objects/map/tileset";
 import { selectedTile, selectedTileArea } from "@/state/selectedTile";
 import {
   subscribeToViewOffset,
@@ -10,11 +10,12 @@ import {
   viewport,
 } from "@/state/viewportState";
 import { initializePanControls } from "@/input/panControl";
+import { createLayer, MapLayer } from "@/state/layers";
 
 export interface MapData {
   width: number;
   height: number;
-  layers: string[];
+  layers: MapLayer[];
   tiles: (Tile | null)[][][]; // [z][y][x]
 }
 
@@ -30,24 +31,24 @@ export async function initializeMap(
   canvas = canvasEl;
   ctx = canvas.getContext("2d")!;
   showAllLayers = true;
-
   const mapData = await loadOrCreateMap(mapId);
   mapState.setMapData(mapData);
   console.log("Map data set successfully:", mapData);
-  setupCanvas(canvas, ctx, mapData.width, mapData.height);
-  canvas.width = 15 * TILE_SIZE;
-  canvas.height = 15 * TILE_SIZE;
+
+  // setup Viewport
+  setupCanvas(canvas, ctx, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "#2b2b2b";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  renderTiles(mapData);
+  renderTiles(ctx, mapData);
   initializePanControls();
   subscribeToViewOffset(() => {
-    renderTiles(mapState.getMapData());
+    renderTiles(ctx, mapState.getMapData());
   });
-  setupSubscriptions();
+  setupSubscriptions(ctx);
   setupClickHandler(canvas, ctx, mapId, mapData);
+  // setupLayerCanvas(canvas, mapData);
 }
 
 async function loadOrCreateMap(mapId: string): Promise<MapData> {
@@ -79,17 +80,17 @@ function createDefaultMap(): MapData {
   const width = 30;
   const height = 30;
   const depth = 1;
+  const defaultLayerName = "Layer 1";
   const defaultTiles = Array.from({ length: depth }, () =>
     Array.from({ length: height }, () => Array(width).fill(null))
-  );
-  const defaultLayers = Array.from(
-    { length: depth },
-    (_, i) => `Layer ${i + 1}`
   );
   defaultTiles[0][0][0] = {
     tilesetId: 1,
     tileIndex: [0, 0],
   }; // Set the first tile as a placeholder
+  const defaultLayers: MapLayer[] = [
+    createLayer(defaultLayerName, width, height),
+  ];
   return {
     width: width,
     height: height,
@@ -98,23 +99,23 @@ function createDefaultMap(): MapData {
   };
 }
 
-function setupSubscriptions() {
+function setupSubscriptions(ctx: CanvasRenderingContext2D) {
   eventBus.subscribe("layerChanged", (newLayer: number) => {
     currentLayerIndex = newLayer;
-    renderTiles(mapState.getMapData());
+    renderTiles(ctx, mapState.getMapData());
   });
 
   eventBus.subscribe("showAllLayersToggled", (value: boolean) => {
     showAllLayers = value;
-    renderTiles(mapState.getMapData());
+    renderTiles(ctx, mapState.getMapData());
   });
 
   eventBus.subscribe("tileUpdated", () => {
-    renderTiles(mapState.getMapData());
+    renderTiles(ctx, mapState.getMapData());
   });
 
   eventBus.subscribe("mapUpdated", (mapData: MapData) => {
-    renderTiles(mapData);
+    renderTiles(ctx, mapData);
   });
 }
 
@@ -122,11 +123,6 @@ async function batchDrawTiles(
   ctx: CanvasRenderingContext2D,
   updates: { tile: Tile | null; x: number; y: number }[]
 ): Promise<void> {
-  const tilesetCache = new Map<
-    number,
-    Awaited<ReturnType<typeof loadTileset>>
-  >();
-
   for (const { tile, x, y } of updates) {
     const trueTileX = x - viewOffset.x;
     const trueTileY = y - viewOffset.y;
@@ -141,11 +137,7 @@ async function batchDrawTiles(
       continue;
     }
 
-    let tileset = tilesetCache.get(tile.tilesetId);
-    if (!tileset) {
-      tileset = await loadTileset(tile.tilesetId);
-      tilesetCache.set(tile.tilesetId, tileset);
-    }
+    let tileset = tilesetCache[tile.tilesetId];
 
     const tileImage = tileset.tileImage[tile.tileIndex[0]][tile.tileIndex[1]];
     if (!tileImage) continue;
@@ -326,7 +318,12 @@ async function applyTileStamp(
           };
 
           mapData.tiles[z][targetY][targetX] = tile;
-          await drawTile(ctx, tile, targetX, targetY);
+          await drawTile(
+            ctx,
+            tile,
+            (targetX + viewOffset.x) * TILE_SIZE,
+            (targetY + viewOffset.y) * TILE_SIZE
+          );
         }
       }
     }
@@ -336,7 +333,7 @@ async function applyTileStamp(
   }
 }
 
-async function renderTiles(mapData: MapData) {
+async function renderTiles(ctx: CanvasRenderingContext2D, mapData: MapData) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const layersToRender = showAllLayers
@@ -382,30 +379,16 @@ async function renderTiles(mapData: MapData) {
   }
 }
 
-const tilesetCache: Record<string, TilesetObject> = {};
-
-async function loadAndCacheTileset(tilesetId: number): Promise<TilesetObject> {
-  if (tilesetCache[tilesetId]) {
-    console.log("Cache hit");
-    return tilesetCache[tilesetId];
-  }
-  console.log("Cache miss");
-
-  const tileset = await loadTileset(tilesetId); // expensive operation
-  tilesetCache[tilesetId] = tileset;
-  return tileset;
-}
-
 async function drawTile(
   ctx: CanvasRenderingContext2D,
   tile: Tile,
   screenX: number,
   screenY: number
 ): Promise<void> {
-  const tileset = await loadAndCacheTileset(tile.tilesetId);
+  const tileset = tilesetCache[tile.tilesetId];
   // const tileset = await loadTileset(tile.tilesetId);
   const tileImage = tileset.tileImage[tile.tileIndex[0]][tile.tileIndex[1]];
-  console.log(`drawing tile at (${screenX}, ${screenY})`);
+  // console.log(`drawing tile at (${screenX}, ${screenY})`);
   if (!tileImage) {
     console.warn(`Missing tile image for tile at (${screenX}, ${screenY})`);
     return;
@@ -422,4 +405,46 @@ async function drawTile(
     TILE_SIZE,
     TILE_SIZE // Destination: where to place it on the canvas (fractional positions allowed)
   );
+}
+
+function drawLayer(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  layer: MapLayer,
+  layerIndex: number
+) {
+  const mapData = mapState.getMapData();
+  const tiles = mapData.tiles;
+  const layerTiles = tiles[layerIndex];
+  const width = mapData.width;
+  const height = mapData.height;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function setupLayerCanvas(
+  container: HTMLElement,
+  mapData: MapData
+): MapLayer[] {
+  const layers = mapData.layers;
+  const canvasLayers: MapLayer[] = layers.map((layer, index) => {
+    const canvas = document.createElement("canvas");
+    canvas.id = `layerCanvas_${index}`;
+    canvas.width = mapData.width * TILE_SIZE;
+    canvas.height = mapData.height * TILE_SIZE;
+    container.appendChild(canvas);
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Failed to get canvas context");
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    return {
+      name: layer.name,
+      canvas: canvas,
+      ctx: ctx,
+    };
+  });
+  return canvasLayers;
 }
