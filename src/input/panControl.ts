@@ -1,6 +1,6 @@
 import { TILE_SIZE } from "@/constants";
 import { MapData } from "@/services/mapService";
-import { mapState } from "@/state/mapState";
+import { MapState } from "@/state/mapState";
 import { viewport, viewOffset } from "@/state/viewportState";
 
 // Pan speed (in pixels per second)
@@ -78,7 +78,7 @@ export function initializePanControls() {
 // This function continuously updates the viewOffset based on time and pan direction
 function panStep(timestamp: number) {
   const timeElapsed = (timestamp - lastPanTimestamp) / 1000; // Time in seconds
-  const mapData = mapState.getMapData(); // Assuming you have a way to get the current map data
+  const mapData = MapState.getMapData(); // Assuming you have a way to get the current map data
   lastPanTimestamp = timestamp;
 
   // Calculate how far we should pan in this frame based on the pan speed and elapsed time

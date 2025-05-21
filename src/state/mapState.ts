@@ -27,7 +27,7 @@ function saveCurrentMap(mapId: string) {
   console.log("Map saved:", mapId);
 }
 
-export const mapState = {
+export const MapState = {
   setMapData,
   getMapData,
   updateTile,

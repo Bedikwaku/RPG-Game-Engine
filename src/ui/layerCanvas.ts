@@ -1,11 +1,11 @@
 import { TILE_SIZE } from "@/constants";
 import { MapLayer } from "@/state/layers";
-import { mapState } from "@/state/mapState";
+import { MapState } from "@/state/mapState";
 
 function renderLayerCanvases() {}
 
 async function initializeCanvasLayer(container: HTMLElement) {
-  const map = mapState.getMapData();
+  const map = MapState.getMapData();
   const layers = map.layers;
   const canvasLayers = layers.map((layer, index): MapLayer => {
     const canvas = document.createElement("canvas");
@@ -32,7 +32,7 @@ async function initializeCanvasLayer(container: HTMLElement) {
 }
 
 function getNumberOfLayers(): number {
-  const mapData = mapState.getMapData();
+  const mapData = MapState.getMapData();
   return mapData.layers.length;
 }
 

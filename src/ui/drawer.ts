@@ -1,4 +1,4 @@
-import { TILE_SIZE } from "@/constants";
+import { SHOW_ALL_LAYERS, TILE_SIZE } from "@/constants";
 import {
   resetSelectedTileArea,
   selectedTile,
@@ -6,8 +6,15 @@ import {
 } from "../state/selectedTile";
 import { discoveredTilesets, tilesetCache } from "@/objects/map/tileset";
 import { dragSelectionManager } from "@/state/dragSelectionManager";
-import { setCurrentLayer, toggleShowAllLayers } from "@/state/layers";
+import {
+  currentLayerIndex,
+  setCurrentLayer,
+  setVisibleLayers,
+  toggleShowAllLayers,
+} from "@/state/layers";
 import { highlightTile } from "@/utils/highlightTile";
+import { MapState } from "@/state/mapState";
+import { addLayerToMap, removeLayerFromMap } from "@/services/mapService";
 
 // Global State
 let selectedTilesetId = 1;
@@ -36,16 +43,83 @@ export async function renderDrawer(): Promise<void> {
   }
 
   drawer.innerHTML = `
-  <h2>Tileset</h2>
-  <label for="tileset-select">Choose a tileset:</label>
-  <select id="tileset-select"></select>
-  <label for="layer-select" style="margin-left: 10px;">Layer:</label>
-  <select id="layer-select"></select>
-  <label><input type="checkbox" id="show-all-layers" checked /> Show all layers</label>
-  <div id="tileset-grid" style="display: flex; flex-wrap: wrap; gap: 0px; margin-top: 10px;"></div>
-`;
+    <h2>Tileset</h2>
+    <label for="tileset-select">Choose a tileset:</label>
+    <select id="tileset-select"></select>
+
+    <label for="layer-select" style="margin-left: 10px;">Layer:</label>
+    <select id="layer-select"></select>
+
+    <button id="add-layer-btn" style="margin-left: 5px;">Add Layer</button>
+    <button id="remove-layer-btn" style="margin-left: 5px;">Remove Layer</button>
+    <label for="visible-layers-select" style="display:block; margin-top: 8px;">Visible Layers:</label>
+    <select id="visible-layers-select" multiple size="4" style="width: 200px;"></select>
+
+
+    <label style="margin-left: 10px;"><input type="checkbox" id="${SHOW_ALL_LAYERS}" checked /> Show all layers</label>
+
+    <div id="tileset-grid" style="display: flex; flex-wrap: wrap; gap: 0px; margin-top: 10px;"></div>
+  `;
+
+  function refreshVisibleLayerSelect(): void {
+    const mapData = MapState.getMapData();
+    const select = document.getElementById(
+      "visible-layers-select"
+    ) as HTMLSelectElement;
+    if (!mapData || !select) return;
+
+    select.innerHTML = "";
+    mapData.layers.forEach((layer, index) => {
+      const option = document.createElement("option");
+      option.value = index.toString();
+      option.textContent = layer.name || `Layer ${index + 1}`;
+      option.selected = true; // Default to showing all layers
+      select.appendChild(option);
+    });
+  }
+
+  function refreshLayerSelect(): void {
+    const mapData = MapState.getMapData();
+    const select = document.getElementById("layer-select") as HTMLSelectElement;
+    if (!mapData || !select) return;
+
+    select.innerHTML = "";
+    mapData.layers.forEach((layer, index) => {
+      const option = document.createElement("option");
+      option.value = index.toString();
+      option.textContent = layer.name || `Layer ${index + 1}`;
+      select.appendChild(option);
+    });
+
+    // Select the current layer index (assumes you store it in state)
+    const current = currentLayerIndex;
+    select.value = current.toString();
+  }
+
+  const visibleLayerSelect = document.getElementById(
+    "visible-layers-select"
+  ) as HTMLSelectElement;
+  function updateVisibleLayers() {
+    const selectedIndices = Array.from(visibleLayerSelect.selectedOptions).map(
+      (opt) => {
+        return parseInt(opt.value, 10);
+      }
+    );
+    console.log("Selected visible layers:", selectedIndices);
+    setVisibleLayers(selectedIndices); // This updates your show logic
+  }
+  visibleLayerSelect.addEventListener("change", updateVisibleLayers);
+
+  refreshVisibleLayerSelect();
+  refreshLayerSelect();
 
   const select = document.getElementById("tileset-select") as HTMLSelectElement;
+  const addLayerBtn = document.getElementById(
+    "add-layer-btn"
+  ) as HTMLButtonElement;
+  const removeLayerBtn = document.getElementById(
+    "remove-layer-btn"
+  ) as HTMLButtonElement;
   const tilesetIds = discoveredTilesets;
 
   // Layer selection dropdown
@@ -54,16 +128,19 @@ export async function renderDrawer(): Promise<void> {
   ) as HTMLSelectElement;
   layerSelect.addEventListener("change", () => {
     const selectedLayerIndex = parseInt(layerSelect.value, 10);
+    console.log("Setting selected layer index to", selectedLayerIndex);
     setCurrentLayer(selectedLayerIndex); // Updates state and triggers renderTiles() automatically
   });
 
   // Show all layers checkbox
-  const showAllLayersCheckbox = document.getElementById(
-    "show-all-layers"
-  ) as HTMLInputElement;
-  showAllLayersCheckbox.addEventListener("change", () => {
-    toggleShowAllLayers(showAllLayersCheckbox.checked); // Updates state and triggers renderTiles() automatically
-  });
+  const showAllLayersCheckbox = document.getElementById(SHOW_ALL_LAYERS);
+  if (!showAllLayersCheckbox) {
+    console.error("Show all layers checkbox not found");
+  } else {
+    showAllLayersCheckbox.addEventListener("change", () => {
+      toggleShowAllLayers((showAllLayersCheckbox as HTMLInputElement).checked); // Updates state and triggers renderTiles() automatically
+    });
+  }
   // Populate dropdown
   tilesetIds.forEach((id) => {
     const option = document.createElement("option");
@@ -80,6 +157,31 @@ export async function renderDrawer(): Promise<void> {
     });
     attachedListeners.tilesheetSelect = true;
   }
+
+  addLayerBtn.addEventListener("click", () => {
+    const mapData = MapState.getMapData();
+    if (!mapData) return;
+
+    const name = `Layer ${mapData.layers.length + 1}`;
+    console.log(`Adding ${name} to mapData`);
+    addLayerToMap(mapData, name);
+    refreshVisibleLayerSelect();
+    console.log(mapData);
+
+    refreshLayerSelect();
+  });
+
+  removeLayerBtn.addEventListener("click", () => {
+    const mapData = MapState.getMapData();
+    if (!mapData) return;
+
+    const layerSelect = document.getElementById(
+      "layer-select"
+    ) as HTMLSelectElement;
+    const index = parseInt(layerSelect.value, 10);
+    removeLayerFromMap(mapData, index);
+    refreshLayerSelect();
+  });
 
   // Load initial tileset
   await displayTileset(selectedTilesetId);
@@ -169,4 +271,23 @@ export function getSelectedTile(): {
     tilesetId: selectedTilesetId,
     tileIndex: selectedTileIndex,
   };
+}
+
+function refreshLayerSelect(): void {
+  const mapData = MapState.getMapData();
+  const select = document.getElementById("layer-select") as HTMLSelectElement;
+  if (!mapData || !select) return;
+
+  select.innerHTML = ""; // Clear current options
+  mapData.layers.forEach((layer, index) => {
+    const option = document.createElement("option");
+    option.value = index.toString();
+    option.textContent = layer.name || `Layer ${index + 1}`;
+    select.appendChild(option);
+  });
+
+  // Re-set to current layer if valid
+  const current = mapData.layers.length - 1;
+  setCurrentLayer(current);
+  select.value = current.toString();
 }

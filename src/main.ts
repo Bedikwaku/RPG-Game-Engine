@@ -6,6 +6,8 @@ import {
   loadAndCacheAllTilesets,
 } from "./objects/map/tileset";
 import { initializeCanvasLayer } from "./ui/layerCanvas";
+import { CANVAS_LAYER_GRID } from "./constants";
+import { renderLayerCanvasManager } from "./ui/layerCanvasManager";
 
 // Canvas setup
 const canvas = document.getElementById("glCanvas") as HTMLCanvasElement;
@@ -23,10 +25,11 @@ async function initializeMapAndLayers(
   await discoverTilesets();
   await loadAndCacheAllTilesets();
   await initializeMap(canvas, "0");
+  renderLayerCanvasManager();
   renderDrawer();
   initializeDebugUI(canvas.parentElement!);
   const canvasLayersGrid = document.createElement("div");
-  canvasLayersGrid.id = "canvasLayersGrid";
+  canvasLayersGrid.id = CANVAS_LAYER_GRID;
   canvasLayersGrid.style.display = "grid";
   document.body.appendChild(canvasLayersGrid);
   // await initializeCanvasLayer(canvasLayersGrid);

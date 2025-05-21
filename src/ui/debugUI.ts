@@ -1,6 +1,6 @@
 import { TILE_SIZE } from "@/constants";
 import { currentLayerIndex } from "@/state/layers";
-import { mapState } from "@/state/mapState";
+import { MapState } from "@/state/mapState";
 import { viewOffset, viewport } from "@/state/viewportState";
 
 let debugDiv: HTMLDivElement;
@@ -8,6 +8,7 @@ let lastFrame = performance.now();
 let fps = 0;
 let mouseX = 0;
 let mouseY = 0;
+
 export function initializeDebugUI(container: HTMLElement) {
   debugDiv = document.createElement("div");
   debugDiv.style.fontFamily = "monospace";
@@ -42,7 +43,7 @@ function trackFPS(now: number) {
 }
 
 function updateDebugInfo() {
-  const map = mapState.getMapData();
+  const map = MapState.getMapData();
 
   debugDiv.innerHTML = `
     <strong>Debug Info</strong><br>

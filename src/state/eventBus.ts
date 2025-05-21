@@ -20,7 +20,9 @@ class EventBus {
   }
 
   public publish<T = void>(event: string, payload: T): void {
+    console.log(`Publishing event: ${event}`);
     const list = this.listeners.get(event);
+    console.log(`Listeners for event: ${list}`);
     if (!list) return;
     list.forEach((listener) => listener(payload));
   }
