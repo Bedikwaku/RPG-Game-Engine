@@ -4,7 +4,7 @@ import {
   selectedTile,
   setSelectedTileArea,
 } from "../state/selectedTile";
-import { discoveredTilesets, tilesetCache } from "@/objects/map/tileset";
+import { discoveredTilesets } from "@/objects/map/tileset";
 import { dragSelectionManager } from "@/state/dragSelectionManager";
 import {
   currentLayerIndex,
@@ -15,6 +15,7 @@ import {
 import { highlightTile } from "@/utils/highlightTile";
 import { MapState } from "@/state/mapState";
 import { addLayerToMap, removeLayerFromMap } from "@/services/mapService";
+import { tilesetCache } from "@/state/cache";
 
 // Global State
 let selectedTilesetId = 1;
@@ -191,7 +192,7 @@ export async function renderDrawer(): Promise<void> {
  * Load and display the tiles from the selected tileset
  */
 async function displayTileset(tilesetId: number): Promise<void> {
-  console.log(`Displaying tileset ${tilesetId}`);
+  console.debug(`Displaying tileset ${tilesetId}`);
   const grid = document.getElementById("tileset-grid");
   if (!grid) return;
   grid.innerHTML = "";
@@ -205,8 +206,8 @@ async function displayTileset(tilesetId: number): Promise<void> {
   grid.style.justifyItems = "stretch";
 
   const totalTiles = tileset.rows * tileset.cols;
-  console.log(`Total columns: ${tileset.cols}`);
-  console.log(`Total rows: ${tileset.rows}`);
+  console.debug(`Total columns: ${tileset.cols}`);
+  console.debug(`Total rows: ${tileset.rows}`);
   console.log(`[TilesetLoader] Displaying ${totalTiles} tiles`);
 
   const canvasTiles: HTMLCanvasElement[][] = [];

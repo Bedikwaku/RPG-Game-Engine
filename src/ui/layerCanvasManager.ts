@@ -4,7 +4,7 @@ import { MapState } from "@/state/mapState";
 const layerCanvases: HTMLCanvasElement[] = [];
 
 export async function renderLayerCanvasManager(): Promise<void> {
-  console.log("Rendering Layer Canvas Manager");
+  console.debug("Rendering Layer Canvas Manager");
   // const drawer = document.getElementById(CANVAS_LAYER_GRID);
   // create a div and append it to the body
   const canvasManager = document.createElement("div");
@@ -31,7 +31,7 @@ export async function renderLayerCanvasManager(): Promise<void> {
 
   layers.forEach((_, layerIndex) => {
     const canvas = document.createElement("canvas");
-    console.log("Creating canvas for layer", layerIndex);
+    console.debug("Creating canvas for layer", layerIndex);
     canvas.width = width;
     canvas.height = height;
     canvas.id = `layerCanvas-${layerIndex}`;

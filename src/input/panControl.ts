@@ -1,10 +1,9 @@
 import { TILE_SIZE } from "@/constants";
-import { MapData } from "@/services/mapService";
 import { MapState } from "@/state/mapState";
 import { viewport, viewOffset } from "@/state/viewportState";
 
 // Pan speed (in pixels per second)
-const PAN_SPEED = 10; // Adjust as needed
+const PAN_SPEED = 1; // Adjust as needed
 
 let panInterval: number | null = null;
 let lastPanTimestamp = 0; // Track time for smooth panning
@@ -14,7 +13,7 @@ const panDirection = { x: 0, y: 0 }; // Store current pan direction
 export function initializePanControls() {
   window.addEventListener("keydown", (e) => {
     if (e.repeat) return; // Prevent repeated keydown events from firing
-
+    console.log("Key pressed:", e.key);
     switch (e.key) {
       case "ArrowUp":
       case "w":
@@ -69,8 +68,8 @@ export function initializePanControls() {
         panInterval = null;
       }
       // Snap to nearest whole tile
-      viewOffset.x = Math.round(viewOffset.x);
-      viewOffset.y = Math.round(viewOffset.y);
+      // viewOffset.x = Math.round(viewOffset.x);
+      // viewOffset.y = Math.round(viewOffset.y);
     }
   });
 }
@@ -81,13 +80,12 @@ function panStep(timestamp: number) {
   const mapData = MapState.getMapData(); // Assuming you have a way to get the current map data
   lastPanTimestamp = timestamp;
 
-  // Calculate how far we should pan in this frame based on the pan speed and elapsed time
-  const offsetX = panDirection.x * PAN_SPEED * timeElapsed;
-  const offsetY = panDirection.y * PAN_SPEED * timeElapsed;
-
-  // Update the viewOffset
-  viewOffset.x += offsetX;
-  viewOffset.y += offsetY;
+  if (viewOffset.actual.x == viewOffset.target.x) {
+    viewOffset.x += panDirection.x;
+  }
+  if (viewOffset.actual.y == viewOffset.target.y) {
+    viewOffset.y += panDirection.y;
+  }
 
   // Ensure the new offset is within map bounds (optional)
   const maxX = Math.max(

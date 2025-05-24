@@ -1,6 +1,6 @@
 import { renderDrawer } from "./ui/drawer";
 import { initializeMap } from "./services/mapService";
-import { initializeDebugUI } from "./ui/debugUI";
+import { renderDebugUI } from "./ui/debugUI";
 import {
   discoverTilesets,
   loadAndCacheAllTilesets,
@@ -8,6 +8,9 @@ import {
 import { initializeCanvasLayer } from "./ui/layerCanvas";
 import { CANVAS_LAYER_GRID } from "./constants";
 import { renderLayerCanvasManager } from "./ui/layerCanvasManager";
+import { CanvasManager } from "./services/canvasManager";
+import { initializeRendererService } from "./services/rendererService";
+import { initializeClickHandler } from "./input/clickControl";
 
 // Canvas setup
 const canvas = document.getElementById("glCanvas") as HTMLCanvasElement;
@@ -24,14 +27,17 @@ async function initializeMapAndLayers(
 ) {
   await discoverTilesets();
   await loadAndCacheAllTilesets();
-  await initializeMap(canvas, "0");
+  await initializeMap("0");
   renderLayerCanvasManager();
   renderDrawer();
-  initializeDebugUI(canvas.parentElement!);
+  renderDebugUI(canvas.parentElement!);
   const canvasLayersGrid = document.createElement("div");
   canvasLayersGrid.id = CANVAS_LAYER_GRID;
   canvasLayersGrid.style.display = "grid";
   document.body.appendChild(canvasLayersGrid);
+  const canvasManager = new CanvasManager(canvasLayersGrid);
+  initializeRendererService(canvas);
+  initializeClickHandler(canvas);
   // await initializeCanvasLayer(canvasLayersGrid);
 }
 

@@ -1,4 +1,5 @@
 import { TILE_SIZE } from "@/constants";
+import { tilesetCache } from "@/state/cache";
 
 export type TilesetObject = {
   tilesetId: number; // ID of the tileset
@@ -71,8 +72,6 @@ async function loadTileset(tilesetId: number): Promise<TilesetObject> {
   });
 }
 
-const tilesetCache: Record<string, TilesetObject> = {};
-
 async function loadAndCacheAllTilesets(): Promise<void> {
   const promises = discoveredTilesets.map(async (tilesetId) => {
     if (tilesetCache[tilesetId]) {
@@ -97,9 +96,4 @@ async function loadAndCacheAllTilesets(): Promise<void> {
   await Promise.all(promises);
 }
 
-export {
-  loadAndCacheAllTilesets,
-  discoverTilesets,
-  tilesetCache,
-  discoveredTilesets,
-};
+export { loadAndCacheAllTilesets, discoverTilesets, discoveredTilesets };

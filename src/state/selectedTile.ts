@@ -6,8 +6,6 @@ export let selectedTileIndex: [number, number] = [0, 0];
 export let selectedTileArea: [number, number, number, number] = [0, 0, 0, 0]; // [startRow, startCol, endRow, endCol]
 export let selectedZ = 0; // Default Z index
 
-export let currentLayerIndex = 0;
-
 export function resetSelectedTileArea() {
   selectedTileArea = [0, 0, 0, 0];
 }

@@ -9,7 +9,7 @@ let fps = 0;
 let mouseX = 0;
 let mouseY = 0;
 
-export function initializeDebugUI(container: HTMLElement) {
+export function renderDebugUI(container: HTMLElement) {
   debugDiv = document.createElement("div");
   debugDiv.style.fontFamily = "monospace";
   debugDiv.style.fontSize = "12px";

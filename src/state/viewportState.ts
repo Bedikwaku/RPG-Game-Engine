@@ -1,8 +1,7 @@
-type ViewOffsetListener = (x: number, y: number) => void;
+import { eventBus } from "./eventBus";
 
 let offset = { x: 0, y: 0 }; // actual view position (animated)
 let targetOffset = { x: 0, y: 0 }; // where we want to scroll to
-const listeners: ViewOffsetListener[] = [];
 
 export const viewport = {
   x: 0,
@@ -10,6 +9,11 @@ export const viewport = {
   width: 15,
   height: 15,
 };
+
+export enum ViewportEvents {
+  VIEWPORT_MOVED = "ViewportMoved",
+  VIEWPORT_RESIZED = "ViewportResized",
+}
 
 export const viewOffset = {
   get x() {
@@ -31,21 +35,10 @@ export const viewOffset = {
   get actual() {
     return { ...offset };
   },
+  get target() {
+    return { ...targetOffset };
+  },
 };
-
-function notifyListeners() {
-  for (const listener of listeners) {
-    listener(offset.x, offset.y);
-  }
-}
-
-export function subscribeToViewOffset(listener: ViewOffsetListener) {
-  listeners.push(listener);
-  return () => {
-    const index = listeners.indexOf(listener);
-    if (index !== -1) listeners.splice(index, 1);
-  };
-}
 
 export const viewScale = 1;
 
@@ -55,7 +48,6 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 function updateSmoothOffset() {
   const speed = 0.2; // adjust for smoother or faster scrolling
 
-  let changed = false;
   const newX = lerp(offset.x, targetOffset.x, speed);
   const newY = lerp(offset.y, targetOffset.y, speed);
 
@@ -63,13 +55,11 @@ function updateSmoothOffset() {
   if (Math.abs(newX - offset.x) > 0.01 || Math.abs(newY - offset.y) > 0.01) {
     offset.x = newX;
     offset.y = newY;
-    changed = true;
+    eventBus.publish("ViewportMoved", offset);
   } else {
     offset.x = targetOffset.x;
     offset.y = targetOffset.y;
   }
-
-  if (changed) notifyListeners();
 
   requestAnimationFrame(updateSmoothOffset);
 }
