@@ -51,7 +51,7 @@ function updateDebugInfo() {
     Viewport Size: ${viewport.width} x ${viewport.height}<br>
     Current Layer: ${currentLayerIndex}<br>
     Map Size: ${map.width} x ${map.height}<br>
-    Mouse Position: ${mouseX}, ${mouseY}<br>
+    Mouse Position: ${mouseX + viewOffset.x}, ${mouseY + viewOffset.y}<br>
     FPS: ${fps}
   `;
 }

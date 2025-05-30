@@ -31,11 +31,11 @@ async function initializeMapAndLayers(
   renderLayerCanvasManager();
   renderDrawer();
   renderDebugUI(canvas.parentElement!);
-  const canvasLayersGrid = document.createElement("div");
-  canvasLayersGrid.id = CANVAS_LAYER_GRID;
-  canvasLayersGrid.style.display = "grid";
-  document.body.appendChild(canvasLayersGrid);
-  const canvasManager = new CanvasManager(canvasLayersGrid);
+  // const canvasLayersGrid = document.createElement("div");
+  // canvasLayersGrid.id = CANVAS_LAYER_GRID;
+  // canvasLayersGrid.style.display = "grid";
+  // document.body.appendChild(canvasLayersGrid);
+  // const canvasManager = new CanvasManager(canvasLayersGrid);
   initializeRendererService(canvas);
   initializeClickHandler(canvas);
   // await initializeCanvasLayer(canvasLayersGrid);

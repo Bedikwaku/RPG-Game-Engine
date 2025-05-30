@@ -214,9 +214,9 @@ async function displayTileset(tilesetId: number): Promise<void> {
   let isDragging = false;
   let dragStart: [number, number] | null = null;
 
-  for (let i = 0; i < tileset.rows; i++) {
+  for (let y = 0; y < tileset.rows; y++) {
     canvasTiles.push([]);
-    for (let j = 0; j < tileset.cols; j++) {
+    for (let x = 0; x < tileset.cols; x++) {
       const tileCanvas = document.createElement("canvas");
       tileCanvas.width = TILE_SIZE;
       tileCanvas.height = TILE_SIZE;
@@ -227,16 +227,16 @@ async function displayTileset(tilesetId: number): Promise<void> {
 
       const ctx = tileCanvas.getContext("2d");
       if (ctx) {
-        ctx.drawImage(tileset.tileImage[i][j], 0, 0);
+        ctx.drawImage(tileset.tileImage[y][x], 0, 0);
       }
 
       tileCanvas.addEventListener("mousedown", () => {
-        dragSelectionManager.start(i, j);
+        dragSelectionManager.start(y, x);
         resetSelectedTileArea();
       });
 
       tileCanvas.addEventListener("mouseenter", () => {
-        const area = dragSelectionManager.update(i, j);
+        const area = dragSelectionManager.update(y, x);
         if (area) {
           setSelectedTileArea(area);
           highlightTile(canvasTiles, area);
@@ -245,15 +245,15 @@ async function displayTileset(tilesetId: number): Promise<void> {
 
       tileCanvas.addEventListener("click", () => {
         if (!dragSelectionManager["isDragging"]) {
-          selectedTileIndex = [i, j];
+          selectedTileIndex = [y, x];
           selectedTile.tilesetId = tilesetId;
-          selectedTile.tileIndex = [i, j];
+          selectedTile.tileIndex = [y, x];
           resetSelectedTileArea();
           highlightTile(canvasTiles, selectedTileIndex);
         }
       });
 
-      canvasTiles[i].push(tileCanvas);
+      canvasTiles[y].push(tileCanvas);
       grid.appendChild(tileCanvas);
     }
   }

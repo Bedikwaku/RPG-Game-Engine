@@ -4,19 +4,19 @@ export class DragSelectionManager {
   private isDragging = false;
   private dragStart: DragStart = null;
 
-  start(row: number, col: number) {
+  start(y: number, x: number) {
     this.isDragging = true;
-    this.dragStart = [row, col];
+    this.dragStart = [y, x];
   }
 
-  update(row: number, col: number): [number, number, number, number] | null {
+  update(y: number, x: number): [number, number, number, number] | null {
     if (!this.isDragging || !this.dragStart) return null;
-    const [startRow, startCol] = this.dragStart;
+    const [startY, startX] = this.dragStart;
     return [
-      Math.min(startRow, row),
-      Math.min(startCol, col),
-      Math.max(startRow, row),
-      Math.max(startCol, col),
+      Math.min(startY, y),
+      Math.min(startX, x),
+      Math.max(startY, y),
+      Math.max(startX, x),
     ];
   }
 
