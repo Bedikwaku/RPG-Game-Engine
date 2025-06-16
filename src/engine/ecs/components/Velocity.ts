@@ -1,4 +1,4 @@
-import { DenseComponent } from "../storage/DenseComponent";
+import { DenseComponent } from "./storage/DenseComponent";
 
 export interface VelocityData {
   x: number;

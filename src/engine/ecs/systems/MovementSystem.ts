@@ -4,7 +4,7 @@ import {
 } from "../components/Acceleration";
 import { PositionComponentName, PositionData } from "../components/Position";
 import { VelocityData } from "../components/Velocity";
-import { System, WorldLike, ComponentData } from "../core/types";
+import { System, WorldLike, ComponentData } from "../../core/types";
 
 export class MovementSystem implements System {
   update(world: WorldLike, dt: number): void {

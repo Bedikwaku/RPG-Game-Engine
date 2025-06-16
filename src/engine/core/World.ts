@@ -1,6 +1,6 @@
 import { Entity, Component, ComponentData, System, WorldLike } from "./types";
-import { EntityManager } from "./EntityManager";
-import { DenseComponent } from "../storage/DenseComponent";
+import { EntityManager } from "../ecs/EntityManager";
+import { DenseComponent } from "@src/engine/ecs/components/storage/DenseComponent";
 
 export class World implements WorldLike {
   private em = new EntityManager();

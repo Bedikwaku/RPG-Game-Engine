@@ -1,4 +1,4 @@
-import { Entity } from "./types";
+import { Entity } from "../core/types";
 
 // Hook types for events
 export interface EntityManagerHooks {
@@ -33,7 +33,6 @@ export class EntityManager {
       entities.add(id);
       return id;
     }
-    throw new Error("No available entity ID found.");
   }
 
   /**

@@ -5,30 +5,8 @@
     <title>WebGL Game</title>
   </head>
   <body>
-    <canvas id="glCanvas" width="800" height="600" style="z-index: 0"></canvas>
-    <div
-      id="drawer"
-      style="
-        position: absolute;
-        right: 0;
-        top: 0;
-        width: 400px;
-        height: 100%;
-        overflow-y: auto;
-        background-color: #222;
-        padding: 8px;
-        box-sizing: border-box;
-        color: white;
-        font-family: sans-serif;
-        z-index: 1;
-      "
-    >
-      <h3>Tileset</h3>
-      <div
-        id="tileset-grid"
-        style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0px"
-      ></div>
-    </div>
-    <script type="module" src="/src/main.ts"></script>
+    <!-- <canvas id="game-canvas"></canvas> -->
+    <div id="ui-root"></div>
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>

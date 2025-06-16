@@ -4,8 +4,8 @@ import {
   ComponentData,
   TypedArray,
   Primitive,
-} from "../core/types";
-import { primitiveToNumber } from "../core/utils";
+} from "@src/engine/core/types";
+import { primitiveToNumber } from "@src/engine/utils/utils";
 
 export class DenseComponent<T extends ComponentData> implements Component<T> {
   // A dense component, also known as a sparseset, utilizes dense array to store data in a

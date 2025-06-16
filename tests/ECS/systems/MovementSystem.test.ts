@@ -7,9 +7,9 @@ import {
   PositionComponent,
   VelocityComponent,
   AccelerationComponent,
-} from "@src/ECS/components";
-import { Entity, WorldLike } from "@src/ECS/core/types";
-import { World } from "@src/ECS/core/World";
+} from "@src/engine/components";
+import { Entity, WorldLike } from "@src/engine/core/types";
+import { World } from "@src/engine/core/World";
 
 describe("Game Init", () => {
   it("Creates entity with Position, Velocity, and Acceleration components", () => {
