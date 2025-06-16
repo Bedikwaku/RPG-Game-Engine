@@ -8,10 +8,11 @@
     "esModuleInterop": true,
     "sourceMap": true,
     "outDir": "dist",
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["*"]
+      "@src/*": ["src/*"],
+      "@test/*": ["test/*"]
     }
   },
-  "include": ["src", "test"]
+  "include": ["src", "tests"]
 }
