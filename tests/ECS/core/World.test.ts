@@ -2,9 +2,9 @@ import { expect } from "chai";
 import sinon from "sinon";
 import { Entity, WorldLike } from "@src/engine/core/types";
 import { World } from "@src/engine/core/World";
-import { DenseComponent } from "@src/engine/components/storage/DenseComponent";
+import { DenseComponent } from "@src/engine/ecs/components/storage/DenseComponent";
 import { interfaces } from "mocha";
-import { SparseComponent } from "@src/engine/components/storage/SparseComponent";
+import { SparseComponent } from "@src/engine/ecs/components/storage/SparseComponent";
 
 interface DenseData {
   x: number;

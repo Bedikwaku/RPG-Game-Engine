@@ -7,7 +7,7 @@ import {
   PositionComponent,
   VelocityComponent,
   AccelerationComponent,
-} from "@src/engine/components";
+} from "@src/engine/ecs/components";
 import { Entity, WorldLike } from "@src/engine/core/types";
 import { World } from "@src/engine/core/World";
 

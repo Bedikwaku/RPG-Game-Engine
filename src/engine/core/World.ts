@@ -1,6 +1,7 @@
 import { Entity, Component, ComponentData, System, WorldLike } from "./types";
 import { EntityManager } from "../ecs/EntityManager";
 import { DenseComponent } from "@src/engine/ecs/components/storage/DenseComponent";
+import { PartitionedDenseComponent } from "../ecs/components/storage/PartitionedDenseComponents";
 
 export class World implements WorldLike {
   private em = new EntityManager();
@@ -15,10 +16,11 @@ export class World implements WorldLike {
     const entity = this.em.addEntity(entities);
     // add entity to all components
     for (const [componentName, component] of this.components.entries()) {
-      console.log(
-        `Initializing entity ${entity} in component ${componentName} `
-      );
-      if (component instanceof DenseComponent) {
+      // console.debug(`Initializing entity ${entity} in ${componentName} `);
+      if (
+        component instanceof DenseComponent ||
+        component instanceof PartitionedDenseComponent
+      ) {
         // SparsesetComponent doesn't create a new entry until component is attached to entity
         continue;
       } else {

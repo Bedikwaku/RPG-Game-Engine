@@ -1,4 +1,4 @@
-import { Component, ComponentData, Entity } from "../../core/types";
+import { Component, ComponentData, Entity } from "@src/engine/core/types";
 
 export class SparseComponent<T extends ComponentData> implements Component<T> {
   /*

@@ -1,4 +1,4 @@
-import { Primitive } from "./types";
+import { Primitive } from "@src/engine/core/types";
 
 export function primitiveToNumber(value: Primitive): number {
   if (typeof value === "number") return value;
@@ -10,4 +10,15 @@ export function primitiveToNumber(value: Primitive): number {
     return value.charCodeAt(0);
   }
   throw new Error("Unsupported type");
+}
+
+export function createSeededPRNG(seed: number): () => number {
+  let state = seed;
+  const a = 16807; // Multiplier
+  const m = 2147483647; // Modulus (2^31 - 1)
+
+  return function () {
+    state = (a * state) % m;
+    return state / m; // Normalize to a value between 0 and 1
+  };
 }

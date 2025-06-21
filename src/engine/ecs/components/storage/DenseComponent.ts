@@ -34,7 +34,7 @@ export class DenseComponent<T extends ComponentData> implements Component<T> {
         );
         break;
       case 2:
-        this.denseArray = new Float16Array(
+        this.denseArray = new Uint16Array(
           initialCapacity * this._dimensionality
         );
         break;
@@ -47,9 +47,9 @@ export class DenseComponent<T extends ComponentData> implements Component<T> {
         this.denseArray = new Float64Array(
           initialCapacity * this._dimensionality
         );
+        break;
       default:
         throw new Error("Invalid bytes per entity. Must be 1, 2, 4, or 8.");
-        break;
     }
   }
 
@@ -180,6 +180,14 @@ export class DenseComponent<T extends ComponentData> implements Component<T> {
     }
   }
 
+  getSize(): number {
+    return this.denseToSparseMapping.length;
+  }
+
+  getDenseArray(): TypedArray {
+    return this.denseArray;
+  }
+
   has(entity: Entity): boolean {
     return this.sparseToDenseMapping.has(entity);
   }
@@ -187,10 +195,12 @@ export class DenseComponent<T extends ComponentData> implements Component<T> {
   forEach(callback: (entity: Entity, data: T, index: number) => void): void {
     for (let i = 0; i < this.denseToSparseMapping.length; i++) {
       const entity = this.denseToSparseMapping[i];
-      const data: ComponentData = {};
-      Object.keys(data).forEach((key, index) => {
+      const data: Partial<T> = {};
+      this.keys.forEach((key, index) => {
         if (index < this._dimensionality) {
-          data[key] = this.denseArray[i * this._dimensionality + index];
+          data[key] = this.denseArray[
+            i * this._dimensionality + index
+          ] as T[typeof key];
         } else {
           throw new Error(
             `Data for entity ${entity} exceeds dimensionality ${this._dimensionality}.`
