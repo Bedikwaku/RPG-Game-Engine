@@ -72,7 +72,7 @@ Other methods for diffusion have explored and may replace this current method. T
 
 ## To Do:
 
-[ ] - Render System (this one has been giving me a headache. Trying to do rendering in ECS is less
+[] - Render System (this one has been giving me a headache. Trying to do rendering in ECS is less
 intuitive than I expected).
-[ ] - Integrate React based frontend.
-[ ] - Create a fertilization system and then set up a vegatation system
+[] - Integrate React based frontend.
+[] - Create a fertilization system and then set up a vegatation system
