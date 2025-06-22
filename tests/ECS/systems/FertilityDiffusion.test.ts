@@ -1,7 +1,7 @@
 import { Entity } from "@src/engine/core/types";
 import { World } from "@src/engine/core/World";
 import { PartitionedDenseComponent } from "@src/engine/ecs/components/storage/PartitionedDenseComponents";
-import { FertilityDiffusionSystem } from "@src/engine/ecs/systems/FertilityDiffusionSystem";
+import { FertilityDiffusionSystem } from "@src/engine/ecs/systems/DiffusionSystem/FertilityDiffusionSystem";
 import { MAP_HEIGHT, MAP_WIDTH } from "@src/engine/utils/constants";
 import { createSeededPRNG } from "@src/engine/utils/utils";
 

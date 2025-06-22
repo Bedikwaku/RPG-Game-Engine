@@ -2,7 +2,7 @@ import { Entity } from "@src/engine/core/types";
 import { World } from "@src/engine/core/World";
 import { MoistureData } from "@src/engine/ecs/components/Moisture";
 import { PartitionedDenseComponent } from "@src/engine/ecs/components/storage/PartitionedDenseComponents";
-import { MoistureDiffusionSystem } from "@src/engine/ecs/systems/MoistureDiffusionSystem";
+import { MoistureDiffusionSystem } from "@src/engine/ecs/systems/DiffusionSystem/MoistureDiffusionSystem";
 import { MAP_HEIGHT, MAP_WIDTH } from "@src/engine/utils/constants";
 import { createSeededPRNG } from "@src/engine/utils/utils";
 
