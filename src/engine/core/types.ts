@@ -17,14 +17,16 @@ export type TypedArray =
   | BigUint64Array;
 
 // Interface for raw component data (used as type constraint).
-export interface ComponentData {
-  // Marker interface – extend with real fields in concrete components
-  [key: string]: any;
-}
+// export interface ComponentData {
+//   // Marker interface – extend with real fields in concrete components
+//   [key: string]: any;
+// }
+
+export type ComponentData = number | TypedArray;
 
 // Interface for a Component store.
 // Generic storage: sparse, packed, etc.
-export interface Component<T extends ComponentData = any> {
+export interface Component<T extends ComponentData> {
   add(entity: Entity, data: T): void;
   set(entity: Entity, data: T): void;
   get(entity: Entity): T | undefined;

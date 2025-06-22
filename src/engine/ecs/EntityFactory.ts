@@ -1,17 +1,17 @@
 import { Entity } from "../core/types";
 
 // Hook types for events
-export interface EntityManagerHooks {
+export interface EntityFactoryHooks {
   onComponentAdded?: (entity: Entity, componentId: number) => void;
   onComponentRemoved?: (entity: Entity, componentId: number) => void;
 }
 
-export class EntityManager {
+export class EntityFactory {
   private recycledEntities: Entity[] = [];
 
-  private hooks: EntityManagerHooks;
+  private hooks: EntityFactoryHooks;
 
-  constructor(hooks: EntityManagerHooks = {}) {
+  constructor(hooks: EntityFactoryHooks = {}) {
     this.hooks = hooks;
   }
 

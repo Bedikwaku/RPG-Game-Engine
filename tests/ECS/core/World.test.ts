@@ -33,11 +33,7 @@ describe("World init", () => {
   });
 
   it("Registering component", () => {
-    const denseComponent = new DenseComponent<DenseData>(
-      255,
-      4,
-      Object.keys(denseDataTemplate) as (keyof DenseData)[]
-    );
+    const denseComponent = new DenseComponent<Uint16Array>(255, 2);
     world.registerComponent("Dense", denseComponent);
     expect(world.getComponent("Dense")).to.equal(denseComponent);
   });
@@ -52,11 +48,7 @@ describe("World entity management", () => {
   });
 
   it("Create Case 1: Create first entity", () => {
-    const denseComponent = new DenseComponent<DenseData>(
-      255,
-      4,
-      Object.keys(denseDataTemplate) as (keyof DenseData)[]
-    );
+    const denseComponent = new DenseComponent<Uint32Array>(255, 4);
     world.registerComponent("Dense", denseComponent);
     const entity = world.createEntity(entities);
     expect(entity).to.equal(0); // First entity should have ID 0
@@ -64,8 +56,8 @@ describe("World entity management", () => {
   });
 
   it("Create Case 2: Create entity in recycled spot", () => {
-    const sparseComponent = new SparseComponent<DenseData>();
-    world.registerComponent("Dense", sparseComponent);
+    const sparseComponent = new SparseComponent<number>();
+    world.registerComponent("Sparse", sparseComponent);
     world.createEntity(entities);
     world.createEntity(entities);
     world.createEntity(entities);
@@ -76,8 +68,8 @@ describe("World entity management", () => {
   });
 
   it("Delete Case 1: Destroy existing entity", () => {
-    const sparseComponent = new SparseComponent<DenseData>();
-    world.registerComponent("Dense", sparseComponent);
+    const sparseComponent = new SparseComponent<number>();
+    world.registerComponent("Sparse", sparseComponent);
     const entity = world.createEntity(entities);
     expect(entities.has(entity)).to.be.true;
     world.destroyEntity(entities, entity);

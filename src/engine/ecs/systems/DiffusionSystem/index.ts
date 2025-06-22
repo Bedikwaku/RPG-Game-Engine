@@ -1,10 +1,13 @@
-import { ComponentData, System, WorldLike } from "@src/engine/core/types";
+import {
+  ComponentData,
+  System,
+  TypedArray,
+  WorldLike,
+} from "@src/engine/core/types";
 import { MAP_WIDTH } from "@src/engine/utils/constants";
-import { PartitionedDenseComponent } from "@src/engine/ecs/components/storage/PartitionedDenseComponents";
+import { DenseComponent } from "../../components/storage/DenseComponent";
 
-export abstract class DiffusionSystem<T extends ComponentData>
-  implements System
-{
+export abstract class DiffusionSystem<T extends TypedArray> implements System {
   // Generic diffusion system
   constructor(
     protected componentName: string,
@@ -14,24 +17,16 @@ export abstract class DiffusionSystem<T extends ComponentData>
   update(world: WorldLike, dt: number, activeMapEntity = -1): void {
     const alpha = 0.1; // Diffusion rate
     if (dt <= 0) return; // No time step, no update
-    const partitionedComponent = world.getComponent<T>(
+    const denseComponent = world.getComponent<T>(
       this.componentName
-    ) as PartitionedDenseComponent<T>;
-    const components = partitionedComponent.getPartition(activeMapEntity);
-    if (!components) {
-      if (activeMapEntity == -1) {
-        console.warn("No components found across any map.");
-        return;
-      }
-      console.warn("No components found for the active map.");
-      return;
-    }
-    const size = components.getSize();
-    const next = new Int16Array(size);
+    ) as DenseComponent<T>;
 
     const width = MAP_WIDTH;
 
-    const componentData = components.getDenseArray() as Int16Array;
+    const components = denseComponent.get(activeMapEntity)!;
+    const size = components.length;
+    const next = new Int16Array(size);
+    const componentData = components as Uint16Array;
     for (let i = 0; i < size; i++) {
       let total = 0;
       let count = 0;
@@ -66,16 +61,22 @@ export abstract class DiffusionSystem<T extends ComponentData>
   }
 
   displayComponentLevels(world: WorldLike, mapId: number): void {
-    const componentArchetype = world.getComponent<T>(
+    const component = world.getComponent<T>(
       this.componentName
-    ) as PartitionedDenseComponent<T>;
+    ) as DenseComponent<T>;
     let output = "";
-    componentArchetype.forEachPartition(mapId, (entity, data, index) => {
-      if (index % MAP_WIDTH === 0 && index !== 0) {
-        output += "\n";
+    const data = component.get(mapId);
+    if (!data) {
+      console.log("No data found for the specified map ID.");
+      return;
+    }
+
+    for (let i = 0; i < data.length; i++) {
+      output += `{x: ${i % MAP_WIDTH}, y: ${Math.floor(i / MAP_WIDTH)} - ${data[i]} } `;
+      if ((i + 1) % MAP_WIDTH === 0) {
+        output += "\n"; // New line after each row
       }
-      output += `{x: ${index % MAP_WIDTH}, y: ${Math.floor(index / MAP_WIDTH)} - ${data.value} } `;
-    });
+    }
     console.log(output);
   }
 }

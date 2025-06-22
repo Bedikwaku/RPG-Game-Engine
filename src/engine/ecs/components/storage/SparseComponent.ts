@@ -1,6 +1,6 @@
 import { Component, ComponentData, Entity } from "@src/engine/core/types";
 
-export class SparseComponent<T extends ComponentData> implements Component<T> {
+export class SparseComponent<T extends number> implements Component<T> {
   /*
    * A sparse component uses a Map to store data for each entity.
    * This is useful for components that have a variable number of properties

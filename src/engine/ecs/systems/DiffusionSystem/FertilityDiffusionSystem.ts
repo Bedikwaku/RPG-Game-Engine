@@ -1,4 +1,3 @@
-import { FertilityData } from "../../components/Fertility";
 import { DiffusionSystem } from ".";
 
-export class FertilityDiffusionSystem extends DiffusionSystem<FertilityData> {}
+export class FertilityDiffusionSystem extends DiffusionSystem<Uint16Array> {}

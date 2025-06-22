@@ -1,14 +1,13 @@
 import { Entity, Component, ComponentData, System, WorldLike } from "./types";
-import { EntityManager } from "../ecs/EntityManager";
+import { EntityFactory } from "../ecs/EntityFactory";
 import { DenseComponent } from "@src/engine/ecs/components/storage/DenseComponent";
-import { PartitionedDenseComponent } from "../ecs/components/storage/PartitionedDenseComponents";
 
 export class World implements WorldLike {
-  private em = new EntityManager();
+  private em = new EntityFactory();
   private components = new Map<string, Component<any>>();
   private systems: System[] = [];
 
-  constructor(em: EntityManager = new EntityManager()) {
+  constructor(em: EntityFactory = new EntityFactory()) {
     this.em = em;
   }
 
@@ -17,10 +16,7 @@ export class World implements WorldLike {
     // add entity to all components
     for (const [componentName, component] of this.components.entries()) {
       // console.debug(`Initializing entity ${entity} in ${componentName} `);
-      if (
-        component instanceof DenseComponent ||
-        component instanceof PartitionedDenseComponent
-      ) {
+      if (component instanceof DenseComponent) {
         // SparsesetComponent doesn't create a new entry until component is attached to entity
         continue;
       } else {
@@ -30,9 +26,6 @@ export class World implements WorldLike {
     return entity;
   }
 
-  /**
-   * Destroys an entity and removes it from all components.
-   */
   destroyEntity(entities: Set<Entity>, entity: Entity): void {
     for (const component of this.components.values()) {
       component.remove(entity);
@@ -40,9 +33,6 @@ export class World implements WorldLike {
     this.em.destroy(entities, entity);
   }
 
-  /**
-   * Register a component store under a name.
-   */
   registerComponent<T extends ComponentData>(
     name: string,
     component: Component<T>
@@ -53,9 +43,6 @@ export class World implements WorldLike {
     this.components.set(name, component);
   }
 
-  /**
-   * Access a registered component store by name.
-   */
   getComponent<T extends ComponentData>(name: string): Component<T> {
     const comp = this.components.get(name);
     if (!comp) {
@@ -80,10 +67,11 @@ export class World implements WorldLike {
     }
   }
 
-  /**
-   * Check if a component is registered.
-   */
   hasComponent(name: string): boolean {
     return this.components.has(name);
+  }
+
+  getActiveMapEntity(): Entity | null {
+    return 1; // Placeholder for active map entity logic
   }
 }

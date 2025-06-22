@@ -1,6 +1,6 @@
 import { Entity } from "@src/engine/core/types";
 import { World } from "@src/engine/core/World";
-import { PartitionedDenseComponent } from "@src/engine/ecs/components/storage/PartitionedDenseComponents";
+import { DenseComponent } from "@src/engine/ecs/components/storage/DenseComponent";
 import { FertilityDiffusionSystem } from "@src/engine/ecs/systems/DiffusionSystem/FertilityDiffusionSystem";
 import { MAP_HEIGHT, MAP_WIDTH } from "@src/engine/utils/constants";
 import { createSeededPRNG } from "@src/engine/utils/utils";
@@ -15,27 +15,22 @@ interface FertilityData {
   value: number;
 }
 
-let FertilityComponent: PartitionedDenseComponent<FertilityData>;
+let FertilityComponent: DenseComponent<Uint16Array>;
 const FertilityComponentName = "FertilityComponent";
 
 let prng: () => number;
 
 function createMapPlots(
-  mapId: number = -1,
-  fertilityComponent: PartitionedDenseComponent<FertilityData>
+  mapEntity: number = -1,
+  fertilityComponent: DenseComponent<Uint16Array>
 ): void {
+  const newFertility = new Uint16Array(mapWidth * mapHeight);
   for (let x = 0; x < mapWidth; x++) {
     for (let y = 0; y < mapHeight; y++) {
-      const plot = world.createEntity(entities);
-      fertilityComponent.add(
-        plot,
-        {
-          value: Math.round(prng() * 65535), // Normalize to 0-65535
-        },
-        mapId
-      );
+      newFertility[x + y * mapWidth] = Math.round(prng() * 65535);
     }
   }
+  fertilityComponent.add(mapEntity, newFertility);
 }
 
 describe("Fertility Tests", () => {
@@ -48,11 +43,9 @@ describe("Fertility Tests", () => {
     entities = new Set<Entity>();
     mapId = world.createEntity(entities);
 
-    FertilityComponent = new PartitionedDenseComponent<FertilityData>(
+    FertilityComponent = new DenseComponent<Uint16Array>(
       mapWidth * mapHeight,
-      2, // Using 2 bytes for Int16
-      ["value"],
-      mapId
+      2
     );
     world.registerComponent(FertilityComponentName, FertilityComponent);
   });

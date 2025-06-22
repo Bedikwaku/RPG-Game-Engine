@@ -1,3 +1,4 @@
+import { extend } from "@pixi/react";
 import {
   Entity,
   Component,
@@ -7,85 +8,46 @@ import {
 } from "@src/engine/core/types";
 import { primitiveToNumber } from "@src/engine/utils/utils";
 
-export class DenseComponent<T extends ComponentData> implements Component<T> {
+export class DenseComponent<T extends TypedArray> implements Component<T> {
   // A dense component, also known as a sparseset, utilizes dense array to store data in a
   // contiguous block of memory.
-  private denseArray: TypedArray;
-  private sparseToDenseMapping: Map<Entity, number> = new Map();
-  private denseToSparseMapping: Entity[] = [];
-  private _dimensionality: number;
-  private keys: (keyof T)[];
+  private sparseToDenseMapping: Map<Entity, TypedArray> = new Map();
+  private bytesPerValue: 1 | 2 | 4 | 8;
+  private dimensionality: number;
 
   constructor(
     initialCapacity: number = 1024,
-    bytesPerEntity: 1 | 2 | 4 | 8,
-    keys: (keyof T)[]
+    bytesPerValue: 1 | 2 | 4 | 8,
+    dimensionality: number = 1
   ) {
-    this._dimensionality = keys ? keys.length : 1;
-    this.keys = keys;
+    this.dimensionality = dimensionality;
     if (initialCapacity <= 0) {
       throw new Error("Initial capacity must be greater than 0");
     }
-
-    switch (bytesPerEntity) {
-      case 1:
-        this.denseArray = new Uint8Array(
-          initialCapacity * this._dimensionality
-        );
-        break;
-      case 2:
-        this.denseArray = new Uint16Array(
-          initialCapacity * this._dimensionality
-        );
-        break;
-      case 4:
-        this.denseArray = new Float32Array(
-          initialCapacity * this._dimensionality
-        );
-        break;
-      case 8:
-        this.denseArray = new Float64Array(
-          initialCapacity * this._dimensionality
-        );
-        break;
-      default:
-        throw new Error("Invalid bytes per entity. Must be 1, 2, 4, or 8.");
-    }
+    this.bytesPerValue = bytesPerValue;
   }
 
-  get dimensionality(): number {
-    return this._dimensionality;
+  private createArray(capacity: number, bytesPerValue: 1 | 2 | 4 | 8): T {
+    switch (bytesPerValue) {
+      case 1:
+        return new Int8Array(capacity * this.dimensionality) as T;
+      case 2:
+        return new Int16Array(capacity * this.dimensionality) as T;
+      case 4:
+        return new Int32Array(capacity * this.dimensionality) as T;
+      case 8:
+        return new BigInt64Array(capacity * this.dimensionality) as T;
+      default:
+        throw new Error("Invalid bytes per value");
+    }
   }
 
   add(entity: Entity, data: T): void {
     // convert data to array if it's a single object
-    const flattenedData = Object.values(data).flatMap((val): Primitive => {
-      if (typeof val === "object") {
-        throw new Error(
-          `Data for entity ${entity} contains nested objects, which are not supported.`
-        );
-      }
-      return val;
-    });
-
     if (entity in this.sparseToDenseMapping) {
       throw new Error(`Entity ${entity} already exists in this store.`);
     }
-    if (flattenedData.length !== this._dimensionality) {
-      console.debug(`Data:`, flattenedData);
-      throw new Error(
-        `Data length ${flattenedData.length} does not match dimensionality ${this._dimensionality}.`
-      );
-    }
-    // Store the data in the dense array
-    const denseIndex = this.denseToSparseMapping.length;
-    for (let i = 0; i < this._dimensionality; i++) {
-      this.denseArray[denseIndex * this._dimensionality + i] =
-        primitiveToNumber(flattenedData[i]);
-    }
-    // Update mappings
-    this.denseToSparseMapping[denseIndex] = entity;
-    this.sparseToDenseMapping.set(entity, denseIndex);
+    this.sparseToDenseMapping.set(entity, data);
   }
 
   set(entity: Entity, data: T): void {
@@ -94,98 +56,16 @@ export class DenseComponent<T extends ComponentData> implements Component<T> {
       this.add(entity, data);
       return;
     }
-    // convert data to array if it's a single object
-    const flattenedData = Object.values(data).flatMap((val): Primitive => {
-      if (typeof val === "object") {
-        throw new Error(
-          `Data for entity ${entity} contains nested objects, which are not supported.`
-        );
-      }
-      return val;
-    });
-    if (flattenedData.length !== this._dimensionality) {
-      console.debug(`Data:`, flattenedData);
-      throw new Error(
-        `Data length ${flattenedData.length} does not match dimensionality ${this._dimensionality}.`
-      );
-    }
-    // Store the data in the dense array
-    for (let i = 0; i < this._dimensionality; i++) {
-      this.denseArray[denseIndex * this._dimensionality + i] =
-        primitiveToNumber(flattenedData[i]);
-    }
+
+    this.sparseToDenseMapping.set(entity, data);
   }
 
   get(entity: Entity): T | undefined {
-    const denseIndex = this.sparseToDenseMapping.get(entity);
-    if (denseIndex === undefined) {
-      return undefined;
-    }
-
-    const start = denseIndex * this._dimensionality;
-
-    const result: Partial<T> = {};
-
-    for (let i = 0; i < this._dimensionality; i++) {
-      const key = this.keys[i];
-      result[key] = this.denseArray[start + i] as T[keyof T];
-    }
-
-    return result as T;
+    return this.sparseToDenseMapping.get(entity) as T | undefined;
   }
 
   remove(entity: Entity): void {
-    const denseIndex = this.sparseToDenseMapping.get(entity);
-    if (denseIndex === undefined) {
-      throw new Error(`Entity ${entity} does not exist in this store.`);
-    }
-    const lastIndex = this.denseToSparseMapping.length - this._dimensionality;
-    if (denseIndex !== lastIndex) {
-      // Swap with last
-      // Ensure type compatibility for .set()
-      const srcStart = lastIndex;
-      const srcEnd = srcStart + this._dimensionality;
-      const destStart = denseIndex;
-
-      if (
-        this.denseArray instanceof Float64Array ||
-        this.denseArray instanceof BigInt64Array ||
-        this.denseArray instanceof BigUint64Array
-      ) {
-        // For BigInt-based arrays, copy manually to avoid type errors
-        for (let i = 0; i < this._dimensionality; i++) {
-          (this.denseArray as any)[destStart + i] = (this.denseArray as any)[
-            srcStart + i
-          ];
-        }
-      } else {
-        // Move data from end of dense array to the denseIndex
-        this.denseArray.set(
-          this.denseArray.subarray(srcStart, srcEnd),
-          destStart
-        );
-      }
-      // Update mapping frpm end of dense array to denseIndex
-      this.sparseToDenseMapping.set(
-        this.denseToSparseMapping[srcStart],
-        destStart
-      );
-      // Update denseToSparseMapping
-      this.denseToSparseMapping[denseIndex] =
-        this.denseToSparseMapping[lastIndex];
-
-      // Remove last entity
-      this.denseToSparseMapping.pop();
-      this.sparseToDenseMapping.delete(entity);
-    }
-  }
-
-  getSize(): number {
-    return this.denseToSparseMapping.length;
-  }
-
-  getDenseArray(): TypedArray {
-    return this.denseArray;
+    const denseIndex = this.sparseToDenseMapping.delete(entity);
   }
 
   has(entity: Entity): boolean {
@@ -193,21 +73,10 @@ export class DenseComponent<T extends ComponentData> implements Component<T> {
   }
 
   forEach(callback: (entity: Entity, data: T, index: number) => void): void {
-    for (let i = 0; i < this.denseToSparseMapping.length; i++) {
-      const entity = this.denseToSparseMapping[i];
-      const data: Partial<T> = {};
-      this.keys.forEach((key, index) => {
-        if (index < this._dimensionality) {
-          data[key] = this.denseArray[
-            i * this._dimensionality + index
-          ] as T[typeof key];
-        } else {
-          throw new Error(
-            `Data for entity ${entity} exceeds dimensionality ${this._dimensionality}.`
-          );
-        }
-      });
-      callback(entity, data as T, i);
+    let index = 0;
+    for (const [entity, data] of this.sparseToDenseMapping.entries()) {
+      callback(entity, data as T, index);
+      index++;
     }
   }
 }
